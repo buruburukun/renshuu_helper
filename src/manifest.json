@@ -1,0 +1,22 @@
+{
+    "name": "Renshuu Helper",
+    "version": "0.1",
+    "description": "Renshuu Helper",
+    "minimum_chrome_version": "116",
+    "manifest_version": 3,
+    "background": {
+        "service_worker": "service_worker.js"
+    },
+    "options_page": "options.html",
+    "side_panel": {
+        "default_path": "side_panel.html"
+    },
+    "host_permissions": [
+        "https://www.renshuu.org/*"
+    ],
+    "permissions": [
+        "contextMenus",
+        "sidePanel",
+        "storage"
+    ]
+}
