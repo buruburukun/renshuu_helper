@@ -15,7 +15,9 @@
         "https://www.renshuu.org/*"
     ],
     "permissions": [
+        "activeTab",
         "contextMenus",
+        "scripting",
         "sidePanel",
         "storage"
     ]

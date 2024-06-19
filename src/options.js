@@ -84,6 +84,7 @@ chrome.storage.sync.onChanged.addListener((changes) => {
         config[key] = newValue;
     }
     if (changes['apikey']) {
+        document.getElementById('apikey').value = config['apikey'];
         getListData();
     }
 });
