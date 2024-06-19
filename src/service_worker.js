@@ -10,7 +10,7 @@ chrome.runtime.onInstalled.addListener(async () => {
         id: 'apikey',
         title: 'Install renshuu API key',
         type: 'normal',
-        documentUrlPatterns: ["https://www.renshuu.org/*"],
+        documentUrlPatterns: ["https://*.renshuu.org/*"],
     });
 });
 

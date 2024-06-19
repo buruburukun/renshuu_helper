@@ -12,7 +12,7 @@
         "default_path": "side_panel.html"
     },
     "host_permissions": [
-        "https://www.renshuu.org/*"
+        "https://*.renshuu.org/*"
     ],
     "permissions": [
         "activeTab",
