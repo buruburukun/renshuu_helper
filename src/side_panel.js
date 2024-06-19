@@ -1,18 +1,35 @@
 const config = {};
+const timers = {};
+
+const cssZoom = new CSSStyleSheet();
+document.adoptedStyleSheets.push(cssZoom);
+const cssFavoriteList = new CSSStyleSheet();
+document.adoptedStyleSheets.push(cssFavoriteList);
+const cssFavoriteSchedule = new CSSStyleSheet();
+document.adoptedStyleSheets.push(cssFavoriteSchedule);
 
 const init = new Promise((resolve, reject) => {
-    chrome.storage.sync.get('apikey', (d) => {
-        Object.assign(config, d);
+    chrome.storage.sync.get(null, (result) => {
+        Object.assign(config, result);
+        setZoom(config['zoom']);
+        setFavoriteList(config['favoriteList']);
+        setFavoriteSchedule(config['favoriteSchedule']);
         resolve();
     });
 });
 
 chrome.storage.sync.onChanged.addListener((changes) => {
-    if (changes['apikey']) {
-        config['apikey'] = changes['apikey'].newValue;
+    for (let [key, {oldValue, newValue}] of Object.entries(changes)) {
+        config[key] = newValue;
     }
     if (changes['zoom']) {
-        setZoom(changes['zoom'].newValue);
+        setZoom(config['zoom']);
+    }
+    if (changes['favoriteList']) {
+        setFavoriteList(config['favoriteList']);
+    }
+    if (changes['favoriteSchedule']) {
+        setFavoriteSchedule(config['favoriteSchedule']);
     }
 });
 
@@ -20,7 +37,23 @@ const setZoom = (zoom) => {
     const d = parseFloat(zoom);
     if (d) {
         const z = d * 100;
-        document.body.style.fontSize = (z|0) + '%';
+        cssZoom.replaceSync(`body { font-size: ${z|0}%; }`);
+    } else {
+        cssZoom.replaceSync(`body { font-size: 100%; }`);
+    }
+};
+const setFavoriteList = (favoriteList) => {
+    if (favoriteList) {
+        cssFavoriteList.replaceSync('.list_plus { display: block; }');
+    } else {
+        cssFavoriteList.replaceSync('.list_plus { display: none; }');
+    }
+};
+const setFavoriteSchedule = (favoriteSchedule) => {
+    if (favoriteSchedule) {
+        cssFavoriteSchedule.replaceSync('.schedule_plus { display: block; }');
+    } else {
+        cssFavoriteSchedule.replaceSync('.schedule_plus { display: none; }');
     }
 };
 
@@ -30,49 +63,17 @@ const resetQuery = () => {
     });
 };
 
-const doRequest = async (url, params, statusElem, onFailure, onSuccess) => {
-    await init;
-    const apikey = config['apikey'];
-    if (!apikey) {
-        statusElem.innerHTML = 'Error! Set the API key in the settings.';
-        onFailure();
-        return;
-    }
-
-    params['headers'] = {
-        'Authorization': `Bearer ${apikey}`,
-    };
-    const response = await fetch(url, params);
-    switch (response.status) {
-        case 401:
-            statusElem.innerHTML = 'Error! Invalid API key.';
-            break;
-        default:
-            console.warn('Unknown response code', response);
-            statusElem.innerHTML = `Unknown response code ${response.status}. Attempting to continue.`;
-        case 200:
-            try {
-                const results = await response.json();
-                onSuccess(results);
-                break;
-            } catch (error) {
-                statusElem.innerHTML = `Error! Something went wrong. Response code: ${response.status}.`;
-                console.error('response', response);
-                onFailure();
-                throw error;
-            }
-    }
-};
-
 const search = async (query, page) => {
     if (!query) {
         return;
     }
 
-    const content = document.body.querySelector('#content');
+    const content = document.querySelector('#content');
     content.innerHTML = `Searching for "${query}"...`;
     const url = `https://www.renshuu.org/api/v1/word/search?value=${encodeURIComponent(query)}&pg=${page}`;
-    await doRequest(url, {}, content, resetQuery, (results) => {
+    await init;
+    const apikey = config['apikey'];
+    await doRequest(apikey, url, {}, content, resetQuery, (results) => {
         content.innerHTML = formatSearch(results);
     });
 };
@@ -110,7 +111,7 @@ const formatSearch = (results) => {
         }
 
         let definition = word['def'];
-        if (typeof word['def'] != 'string') {
+        if (typeof word['def'] !== 'string') {
             definition = `<ol><li>${word['def'].join('</li><li>')}</li></ol>`;
         }
 
@@ -128,14 +129,17 @@ const formatSearch = (results) => {
             <div class="row">
                 <div>
                     <div class="flex_h">
-                        <div class="word">${entry}</div>
-                        <div class="plus" data="popup_${word['id']}">+</div>
+                        <div class="word flex_pad">${entry}</div>
+                        <div class="status" id="${word['id']}_status"></div>
+                        <div class="list_plus" wordId="${word['id']}">L+</div>
+                        <div class="schedule_plus" wordId="${word['id']}">S+</div>
+                        <div class="plus" popupId="popup_${word['id']}">+</div>
                     </div>
                     <div id="popup_${word['id']}" class="popup">
                         <div class="flex_h">
                             <div class="header">Add this term</div>
                             <div class="status" id="popup_${word['id']}_status"></div>
-                            <div class="close" data="popup_${word['id']}">X</div>
+                            <div class="close" popupId="popup_${word['id']}">X</div>
                         </div>
                         <div class="flex_h lists">
                             <div class="column2">
@@ -166,10 +170,10 @@ const formatLists = (wordId, results, isList) => {
     // TODO groups
     let result = '';
     for (const presence of results['words'][0]['presence'][key]) {
-        const id = presence[idKey];
+        const listId = presence[idKey];
         const name = presence['name'];
         const present = presence['hasWord'];
-        const inputId = `adder_${wordId}_${id}`;
+        const inputId = `adder_${wordId}_${listId}`;
         result += `
             <div>
                 <input type="checkbox"
@@ -177,7 +181,7 @@ const formatLists = (wordId, results, isList) => {
                     class="adder"
                     wordId="${wordId}"
                     isList="${isList}"
-                    listId="${id}"
+                    listId="${listId}"
                     ${present ? 'checked' : ''}>
                 <label for="${inputId}">${name}</label>
             </div>
@@ -191,7 +195,9 @@ const populateListData = async (wordId, list, schedule) => {
     schedule.innerHTML = '';
 
     const url = `https://www.renshuu.org/api/v1/word/${wordId}`;
-    await doRequest(url, {}, list, () => {}, (results) => {
+    await init;
+    const apikey = config['apikey'];
+    await doRequest(apikey, url, {}, list, () => {}, (results) => {
         list.innerHTML = formatLists(wordId, results, true);
         schedule.innerHTML = formatLists(wordId, results, false);
     });
@@ -212,57 +218,86 @@ const showPopup = async (popupId, show) => {
     }
 };
 
-const lastAssign = [];
 const assign = async (elem) => {
-    while (lastAssign.length > 0) {
-        clearTimeout(lastAssign.pop());
-    }
-
     const wordId = elem.attributes.getNamedItem('wordId').value;
     const isList = elem.attributes.getNamedItem('isList').value === 'true';
     const listId = elem.attributes.getNamedItem('listId').value;
-    const checked = elem.checked;
-    const method = checked ? 'PUT' : 'DELETE';
-    const key = isList ? 'list_id' : 'sched_id';
-    const body = {};
-    body[key] = listId;
+    const add = elem.checked;
+    const timerId = `popup_${wordId}_status`;
+    const stat = document.getElementById(timerId);
+    assignInternal(wordId, isList, listId, add, timerId, stat);
+};
 
-    const stat = document.getElementById(`popup_${wordId}_status`);
+const assignInternal = async (wordId, isList, listId, add, timerId, stat) => {
+    if (timers[timerId]) {
+        clearTimeout(timers[timerId]);
+    }
+
     stat.classList.remove('error');
     stat.classList.add('show');
     stat.innerHTML = 'Submitting data...';
 
     const url = `https://www.renshuu.org/api/v1/word/${wordId}`;
+    const method = add ? 'PUT' : 'DELETE';
+    const key = isList ? 'list_id' : 'sched_id';
+    const body = {};
+    body[key] = listId;
     const params = {
         method: method,
         body: JSON.stringify(body),
     };
-    await doRequest(url, params, stat, () => {
+    await init;
+    const apikey = config['apikey'];
+    await doRequest(apikey, url, params, stat, () => {
         stat.classList.add('error');
     }, (results) => {
-        stat.innerHTML = 'Success!'
-        lastAssign.push(setTimeout(() => {
-            stat.classList.remove('show');
-        }, 1000));
+        const resultMessage = results['words'][0]['result'] || results['words'][0]['error'];
+        if (resultMessage === undefined) {
+            stat.innerHTML = `Error! ${isList ? 'List' : 'Schedule'} might not exist.`;
+            stat.classList.add('error');
+        } else {
+            console.log("Result message:", resultMessage);
+            stat.innerHTML = 'Success!'
+            timers[timerId] = setTimeout(() => {
+                stat.classList.remove('show');
+                delete timers[timerId];
+            }, 1000);
+        }
     });
 }
 
+const addToList = (elem, isList) => {
+    const configKey = isList ? 'favoriteList' : 'favoriteSchedule';
+    const listId = config[configKey];
+    if (listId) {
+        const wordId = elem.attributes.getNamedItem('wordId').value;
+        const add = true;
+        const timerId = `${wordId}_status`;
+        const stat = document.getElementById(timerId);
+        assignInternal(wordId, isList, listId, add, timerId, stat);
+    }
+};
+
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('plus')) {
-        const id = e.target.attributes.getNamedItem('data').value;
-        const shownPopups = document.body.querySelectorAll('.popup.show');
+        const popupId = e.target.attributes.getNamedItem('popupId').value;
+        const shownPopups = document.querySelectorAll('.popup.show');
         for (const popup of shownPopups) {
             showPopup(popup.id, false);
         }
-        showPopup(id, true);
+        showPopup(popupId, true);
     } else if (e.target.classList.contains('close')) {
-        const id = e.target.attributes.getNamedItem('data').value;
-        showPopup(id, false);
+        const popupId = e.target.attributes.getNamedItem('popupId').value;
+        showPopup(popupId, false);
+    } else if (e.target.classList.contains('list_plus')) {
+        addToList(e.target, true);
+    } else if (e.target.classList.contains('schedule_plus')) {
+        addToList(e.target, false);
     } else if (e.target.classList.contains('adder')) {
         assign(e.target);
     } else if (e.target.classList.contains('search_page')) {
-        const page = e.target.attributes.getNamedItem('page').value;
         const query = e.target.attributes.getNamedItem('query').value;
+        const page = e.target.attributes.getNamedItem('page').value;
         search(query, page);
     }
 });

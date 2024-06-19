@@ -18,16 +18,12 @@ body {
     color: #ffffff;
 }
 
-.word {
+.word, .plus, .list_plus, .schedule_plus, .close {
     font-size: 150%;
 }
 
-.plus {
-    font-size: 150%;
-}
-
-.close {
-    font-size: 150%;
+.list_plus, .schedule_plus {
+    padding-right: 1em;
 }
 
 .partofspeech {

@@ -5,17 +5,30 @@
     </head>
     <body>
         <div>
-            <span>API Key</span>
+            <label for="apikey">API Key:</label>
             <input id="apikey"></input>
         </div>
         <div>
-            <span>Zoom</span>
+            <label for="zoom">Zoom:</label>
             <input id="zoom"></input>
+        </div>
+        <div>
+            <label for="favorite_list">Favorite List:</label>
+            <select id="favorite_list">
+                <option value="INVALID">Loading...</option>
+            </select>
+        </div>
+        <div>
+            <label for="favorite_schedule">Favorite Schedule:</label>
+            <select id="favorite_schedule">
+                <option value="INVALID">Loading...</option>
+            </select>
         </div>
         <div>
             <button id="save">Save</button>
             <span id="saved"></span>
         </div>
+        <script src="shared.js"></script>
         <script src="options.js"></script>
     </body>
 </html>
