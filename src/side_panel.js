@@ -3,6 +3,8 @@ const timers = {};
 
 const cssZoom = new CSSStyleSheet();
 document.adoptedStyleSheets.push(cssZoom);
+const cssDark = new CSSStyleSheet();
+document.adoptedStyleSheets.push(cssDark);
 const cssFavoriteList = new CSSStyleSheet();
 document.adoptedStyleSheets.push(cssFavoriteList);
 const cssFavoriteSchedule = new CSSStyleSheet();
@@ -12,6 +14,7 @@ const init = new Promise((resolve, reject) => {
     chrome.storage.sync.get(null, (result) => {
         Object.assign(config, result);
         setZoom(config['zoom']);
+        setDark(config['dark']);
         setFavoriteList(config['favoriteList']);
         setFavoriteSchedule(config['favoriteSchedule']);
         resolve();
@@ -19,11 +22,14 @@ const init = new Promise((resolve, reject) => {
 });
 
 chrome.storage.sync.onChanged.addListener((changes) => {
-    for (let [key, {oldValue, newValue}] of Object.entries(changes)) {
+    for (const [key, {oldValue, newValue}] of Object.entries(changes)) {
         config[key] = newValue;
     }
     if (changes['zoom']) {
         setZoom(config['zoom']);
+    }
+    if (changes['dark']) {
+        setDark(config['dark']);
     }
     if (changes['favoriteList']) {
         setFavoriteList(config['favoriteList']);
@@ -39,8 +45,12 @@ const setZoom = (zoom) => {
         const z = d * 100;
         cssZoom.replaceSync(`body { font-size: ${z|0}%; }`);
     } else {
-        cssZoom.replaceSync(`body { font-size: 100%; }`);
+        cssZoom.replaceSync('');
     }
+};
+const setDark = (dark) => {
+    const theme = dark ? 'dark' : 'light';
+    document.documentElement.setAttribute('theme', theme);
 };
 const setFavoriteList = (favoriteList) => {
     if (favoriteList) {

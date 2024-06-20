@@ -4,13 +4,16 @@ const init = new Promise((resolve, reject) => {
     const defaults = {
         apikey: '',
         zoom: '1',
+        dark: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
         favoriteList: '',
         favoriteSchedule: '',
     };
     chrome.storage.sync.get(defaults, (result) => {
         Object.assign(config, result);
-        document.getElementById('apikey').value = result.apikey;
-        document.getElementById('zoom').value = result.zoom;
+        document.getElementById('apikey').value = config['apikey'];
+        document.getElementById('zoom').value = config['zoom'];
+        document.getElementById('dark').checked = config['dark'];
+        setDark(config['dark']);
         resolve();
         getListData();
     });
@@ -24,6 +27,7 @@ document.getElementById('save').addEventListener('click', () => {
     const values = {
         apikey: document.getElementById('apikey').value,
         zoom: document.getElementById('zoom').value,
+        dark: document.getElementById('dark').checked,
     };
 
     const listValue = document.getElementById('favorite_list').value;
@@ -79,12 +83,20 @@ const getListData = async () => {
     }
 };
 
+const setDark = (dark) => {
+    const theme = dark ? 'dark' : 'light';
+    document.documentElement.setAttribute('theme', theme);
+};
+
 chrome.storage.sync.onChanged.addListener((changes) => {
-    for (let [key, {oldValue, newValue}] of Object.entries(changes)) {
+    for (const [key, {oldValue, newValue}] of Object.entries(changes)) {
         config[key] = newValue;
     }
     if (changes['apikey']) {
         document.getElementById('apikey').value = config['apikey'];
         getListData();
+    }
+    if (changes['dark']) {
+        setDark(config['dark']);
     }
 });

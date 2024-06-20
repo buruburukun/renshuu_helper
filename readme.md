@@ -41,9 +41,9 @@ up as "L+" and "S+" buttons, respectively.
 
 * Support other languages other than English
 * Support other browsers other than Chrome
-* Light mode
 * Make the options page prettier
 * Make the "Install renshuu API key" feature less janky
 * More renshuu APIs to make this a better extension
 * Improvements to renshuu's APIs
 * More Kaochan?
+* Pitch accent

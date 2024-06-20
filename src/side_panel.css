@@ -1,3 +1,17 @@
+:root {
+    --bg: #ffffff;
+    --fg: #000000;
+    --stripe-bg: #eff7fc;
+    --popup-bg: #dfdfdf;
+}
+
+[theme="dark"] {
+    --bg: #1e1e1e;
+    --fg: #f2f2f2;
+    --stripe-bg: #2f3030;
+    --popup-bg: #404040;
+}
+
 .flex_h {
     display: flex;
     flex-direction: row;
@@ -14,8 +28,8 @@
 
 body {
     font-size: 100%;
-    background-color: #000000;
-    color: #ffffff;
+    background-color: var(--bg);
+    color: var(--fg);
 }
 
 .word, .plus, .list_plus, .schedule_plus, .close {
@@ -51,11 +65,11 @@ body {
 }
 
 .row:nth-child(even) {
-    background-color: #202020;
+    background-color: var(--bg);
 }
 
 .row:nth-child(odd) {
-    background-color: #303030;
+    background-color: var(--stripe-bg);
 }
 
 .popup {
@@ -66,8 +80,8 @@ body {
     width: 90%;
     height: 30%;
     padding: 10px;
-    background-color: #000000;
-    color: #ffffff;
+    background-color: var(--popup-bg);
+    color: var(--fg);
 }
 
 .popup.show {

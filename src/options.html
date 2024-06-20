@@ -2,28 +2,55 @@
 <html>
     <head>
         <title>Renshuu Options</title>
+        <link rel="stylesheet" href="options.css">
     </head>
     <body>
-        <div>
-            <label for="apikey">API Key:</label>
-            <input id="apikey"></input>
-        </div>
-        <div>
-            <label for="zoom">Zoom:</label>
-            <input id="zoom"></input>
-        </div>
-        <div>
-            <label for="favorite_list">Favorite List:</label>
-            <select id="favorite_list">
-                <option value="INVALID">Loading...</option>
-            </select>
-        </div>
-        <div>
-            <label for="favorite_schedule">Favorite Schedule:</label>
-            <select id="favorite_schedule">
-                <option value="INVALID">Loading...</option>
-            </select>
-        </div>
+        <table>
+            <tr>
+                <td>
+                    <label for="apikey">API Key:</label>
+                </td>
+                <td>
+                    <input id="apikey"></input>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="zoom">Zoom:</label>
+                </td>
+                <td>
+                    <input id="zoom"></input>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="dark">Dark mode:</label>
+                </td>
+                <td>
+                    <input id="dark" type="checkbox"></input>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="favorite_list">Favorite List:</label>
+                </td>
+                <td>
+                    <select id="favorite_list">
+                        <option value="INVALID">Loading...</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="favorite_schedule">Favorite Schedule:</label>
+                </td>
+                <td>
+                    <select id="favorite_schedule">
+                        <option value="INVALID">Loading...</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
         <div>
             <button id="save">Save</button>
             <span id="saved"></span>
