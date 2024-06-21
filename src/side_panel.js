@@ -136,7 +136,7 @@ const formatPitch = (pitch) => {
 
 const formatSearch = (results) => {
     const count = results['result_count'];
-    const m = (count / results['per_pg']) | 0;
+    const m = results['total_pg'] - 1;
     const page = parseInt(results['pg'], 10);
     const query = results['query'];
     const prev = (page <= 0) ? '' : `<div class="search_page" query="${query}" page="${page-1}">&lt;</div>`;
