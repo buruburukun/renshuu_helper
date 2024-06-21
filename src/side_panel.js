@@ -3,12 +3,6 @@ const timers = {};
 
 const cssZoom = new CSSStyleSheet();
 document.adoptedStyleSheets.push(cssZoom);
-const cssDark = new CSSStyleSheet();
-document.adoptedStyleSheets.push(cssDark);
-const cssFavoriteList = new CSSStyleSheet();
-document.adoptedStyleSheets.push(cssFavoriteList);
-const cssFavoriteSchedule = new CSSStyleSheet();
-document.adoptedStyleSheets.push(cssFavoriteSchedule);
 
 const init = new Promise((resolve, reject) => {
     chrome.storage.sync.get(null, (result) => {
@@ -53,18 +47,10 @@ const setDark = (dark) => {
     document.documentElement.setAttribute('theme', theme);
 };
 const setFavoriteList = (favoriteList) => {
-    if (favoriteList) {
-        cssFavoriteList.replaceSync('.list_plus { display: block; }');
-    } else {
-        cssFavoriteList.replaceSync('.list_plus { display: none; }');
-    }
+    document.documentElement.setAttribute('favorite_list', favoriteList ? 'true' : '');
 };
 const setFavoriteSchedule = (favoriteSchedule) => {
-    if (favoriteSchedule) {
-        cssFavoriteSchedule.replaceSync('.schedule_plus { display: block; }');
-    } else {
-        cssFavoriteSchedule.replaceSync('.schedule_plus { display: none; }');
-    }
+    document.documentElement.setAttribute('favorite_schedule', favoriteSchedule ? 'true' : '');
 };
 
 const resetQuery = () => {

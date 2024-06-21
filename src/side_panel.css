@@ -38,6 +38,11 @@ body {
 
 .list_plus, .schedule_plus {
     padding-right: 1em;
+    display: none;
+}
+
+[favorite_list="true"] .list_plus, [favorite_schedule="true"] .schedule_plus {
+    display: block;
 }
 
 .partofspeech {
