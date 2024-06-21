@@ -124,3 +124,13 @@ body {
 .search_page {
     margin: 0px 5px;
 }
+
+.pitch_high {
+   border-top: 3px solid #00ff00;
+}
+.pitch_rise {
+   border-left: 3px solid #00ff00;
+}
+.pitch_drop {
+   border-right: 3px solid #00ff00;
+}

@@ -98,6 +98,42 @@ chrome.storage.session.onChanged.addListener((changes) => {
     }
 });
 
+const formatPitch = (pitch) => {
+    const result = [];
+    let high = false;
+    let rise = false;
+    for (const ch of pitch) {
+        if (ch === '\u2b67') {
+            rise = true;
+            high = true;
+        } else if (ch === '\u2b68') {
+            high = false;
+            result[result.length - 1].drop = true;
+        } else {
+            result.push({
+                ch: ch,
+                rise: rise,
+                high: high,
+                drop: false,
+            });
+            rise = false;
+        }
+    }
+    return result.map((d) => {
+        const classes = [];
+        if (d.rise) {
+            classes.push('pitch_rise');
+        }
+        if (d.high) {
+            classes.push('pitch_high');
+        }
+        if (d.drop) {
+            classes.push('pitch_drop');
+        }
+        return `<span class="${classes.join(' ')}">${d.ch}</span>`;
+    }).join('');
+};
+
 const formatSearch = (results) => {
     const count = results['result_count'];
     const m = (count / results['per_pg']) | 0;
@@ -115,9 +151,16 @@ const formatSearch = (results) => {
         <div>${count} Results</div>
     `;
     for (const word of results['words']) {
-        let entry = word['hiragana_full'];
+        let entry = word['pitch'].length > 0 ? formatPitch(word['pitch'][0]) : word['hiragana_full'];
         if (word['kanji_full']) {
             entry = `${word['kanji_full']} / ${entry}`;
+        }
+
+        let alternatePitch = '';
+        if (word['pitch'].length > 1) {
+            alternatePitch = `<div class="alternate_pitch">
+                Alternate accent: ${word['pitch'].slice(1).map(formatPitch).join(', ')}
+            </div>`;
         }
 
         let definition = word['def'];
@@ -162,6 +205,7 @@ const formatSearch = (results) => {
                             </div>
                         </div>
                     </div>
+                    ${alternatePitch}
                     <div class="partofspeech">${word['typeofspeech']}</div>
                     <div class="definition">${definition}</div>
                     <div class="markers">${markers}</div>

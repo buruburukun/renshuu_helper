@@ -46,4 +46,3 @@ up as "L+" and "S+" buttons, respectively.
 * More renshuu APIs to make this a better extension
 * Improvements to renshuu's APIs
 * More Kaochan?
-* Pitch accent
