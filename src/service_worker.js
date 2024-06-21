@@ -28,7 +28,7 @@ chrome.contextMenus.onClicked.addListener(async (item, tab) => {
                 tabId: tab.id,
             },
             func: async () => {
-                // TODO this can be better. Perhaps put the apikey somewhere with an id.
+                // TODO this can be better
                 document.querySelectorAll('div.fright[onclick]')[0].click();
 
                 const waitForElm = (selector) => {
@@ -51,21 +51,13 @@ chrome.contextMenus.onClicked.addListener(async (item, tab) => {
                 const closeButton = await waitForElm('#settings_close_btn');
                 closeButton.click();
 
-                const candidates = document.querySelectorAll('div.setting_cat_exp div.pushdown');
-                if (candidates.length === 0) {
-                    console.error('Renshuu Helper: Open the settings dialog, then try again.');
+                const elem = document.getElementById('api_key');
+                if (elem) {
+                    return elem.value;
+                } else {
+                    console.error('Renshuu Helper: Could not find API key.');
                     return null;
                 }
-
-                for (const elem of candidates) {
-                    if (elem.parentElement.parentElement.firstElementChild.textContent === 'API Key') {
-                        const apikey = elem.textContent.trim();
-                        return apikey;
-                    }
-                }
-
-                console.error('Renshuu Helper: Could not find API key.');
-                return null;
             },
         }).then((result) => {
             const apikey = result[0].result;
