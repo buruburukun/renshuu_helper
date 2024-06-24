@@ -120,6 +120,28 @@ const formatPitch = (pitch) => {
     }).join('');
 };
 
+const popupHtml = (wordId) => {
+    return `
+        <div id="popup_${wordId}" class="popup">
+            <div class="flex_h">
+                <div class="header">Add this term</div>
+                <div class="status" id="popup_${wordId}_status"></div>
+                <div class="close" popupId="popup_${wordId}">X</div>
+            </div>
+            <div class="flex_h lists">
+                <div class="column2">
+                    <div class="subheader">Lists</div>
+                    <div id="popup_${wordId}_lists"></div>
+                </div>
+                <div class="column2">
+                    <div class="subheader">Schedules</div>
+                    <div id="popup_${wordId}_schedules"></div>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
 const formatSearch = (results) => {
     console.log(results);
     const count = results['result_count'];
@@ -162,7 +184,15 @@ const formatSearch = (results) => {
 
         let aforms = '';
         if (word['aforms'].length > 0) {
-            aforms = `Also written as: <span class="aform">${word['aforms'].join('</span><span class="aform">')}</span>`;
+            aforms = 'Also written as: ';
+            for (const aform of word['aforms']) {
+                aforms += `
+                    <span class="aform" popupId="popup_${aform['id']}">
+                        ${popupHtml(aform['id'])}
+                        ${aform['term']}
+                    </span>
+                `;
+            }
         }
 
         result += `
@@ -175,23 +205,7 @@ const formatSearch = (results) => {
                         <div class="schedule_plus" wordId="${word['id']}">S+</div>
                         <div class="plus" popupId="popup_${word['id']}">+</div>
                     </div>
-                    <div id="popup_${word['id']}" class="popup">
-                        <div class="flex_h">
-                            <div class="header">Add this term</div>
-                            <div class="status" id="popup_${word['id']}_status"></div>
-                            <div class="close" popupId="popup_${word['id']}">X</div>
-                        </div>
-                        <div class="flex_h lists">
-                            <div class="column2">
-                                <div class="subheader">Lists</div>
-                                <div id="popup_${word['id']}_lists"></div>
-                            </div>
-                            <div class="column2">
-                                <div class="subheader">Schedules</div>
-                                <div id="popup_${word['id']}_schedules"></div>
-                            </div>
-                        </div>
-                    </div>
+                    ${popupHtml(word['id'])}
                     ${alternatePitch}
                     <div class="partofspeech">${word['typeofspeech']}</div>
                     <div class="definition">${definition}</div>
@@ -320,7 +334,7 @@ const addToList = (elem, isList) => {
 };
 
 document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('plus')) {
+    if (e.target.classList.contains('plus') || e.target.classList.contains('aform')) {
         const popupId = e.target.attributes.getNamedItem('popupId').value;
         const shownPopups = document.querySelectorAll('.popup.show');
         for (const popup of shownPopups) {
