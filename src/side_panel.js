@@ -143,7 +143,6 @@ const popupHtml = (wordId) => {
 };
 
 const formatSearch = (results) => {
-    console.log(results);
     const count = results['result_count'];
     const m = results['total_pg'];
     const page = parseInt(results['pg'], 10);
