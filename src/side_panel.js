@@ -75,12 +75,12 @@ const search = async (query, page) => {
 };
 
 chrome.storage.session.get(['searchQuery'], ({searchQuery}) => {
-    search(searchQuery, 0);
+    search(searchQuery, 1);
 });
 
 chrome.storage.session.onChanged.addListener((changes) => {
     if (changes['searchQuery']) {
-        search(changes['searchQuery'].newValue, 0);
+        search(changes['searchQuery'].newValue, 1);
     }
 });
 
@@ -121,16 +121,17 @@ const formatPitch = (pitch) => {
 };
 
 const formatSearch = (results) => {
+    console.log(results);
     const count = results['result_count'];
-    const m = results['total_pg'] - 1;
+    const m = results['total_pg'];
     const page = parseInt(results['pg'], 10);
     const query = results['query'];
-    const prev = (page <= 0) ? '' : `<div class="search_page" query="${query}" page="${page-1}">&lt;</div>`;
+    const prev = (page <= 1) ? '' : `<div class="search_page" query="${query}" page="${page-1}">&lt;</div>`;
     const next = (page >= m) ? '' : `<div class="search_page" query="${query}" page="${page+1}">&gt;</div>`;
     let result = `
         <div class="flex_h">
             ${prev}
-            <div>Page ${page+1} of ${m+1}</div>
+            <div>Page ${page} of ${m}</div>
             ${next}
             <div class="flex_pad"></div>
         </div>
