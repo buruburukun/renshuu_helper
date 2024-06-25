@@ -305,7 +305,7 @@ const assignInternal = async (wordId, isList, listId, add, timerId, stat) => {
     await doRequest(apikey, endpoint, params, stat, () => {
         stat.classList.add('error');
     }, (results) => {
-        const resultMessage = results['words'][0]['result'] || results['words'][0]['error'];
+        const resultMessage = results['result'] || results['error'];
         if (resultMessage === undefined) {
             stat.innerHTML = `Error! ${isList ? 'List' : 'Schedule'} might not exist.`;
             stat.classList.add('error');
