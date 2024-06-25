@@ -66,10 +66,10 @@ const search = async (query, page) => {
 
     const content = document.querySelector('#content');
     content.innerHTML = `Searching for "${query}"...`;
-    const url = `https://www.renshuu.org/api/v1/word/search?value=${encodeURIComponent(query)}&pg=${page}`;
+    const endpoint = `/v1/word/search?value=${encodeURIComponent(query)}&pg=${page}`;
     await init;
     const apikey = config['apikey'];
-    await doRequest(apikey, url, {}, content, resetQuery, (results) => {
+    await doRequest(apikey, endpoint, {}, content, resetQuery, (results) => {
         content.innerHTML = formatSearch(results);
     });
 };
@@ -248,10 +248,10 @@ const populateListData = async (wordId, list, schedule) => {
     list.innerHTML = 'Getting data...';
     schedule.innerHTML = '';
 
-    const url = `https://www.renshuu.org/api/v1/word/${wordId}`;
+    const endpoint = `/v1/word/${wordId}`;
     await init;
     const apikey = config['apikey'];
-    await doRequest(apikey, url, {}, list, () => {}, (results) => {
+    await doRequest(apikey, endpoint, {}, list, () => {}, (results) => {
         list.innerHTML = formatLists(wordId, results, true);
         schedule.innerHTML = formatLists(wordId, results, false);
     });
@@ -291,7 +291,7 @@ const assignInternal = async (wordId, isList, listId, add, timerId, stat) => {
     stat.classList.add('show');
     stat.innerHTML = 'Submitting data...';
 
-    const url = `https://www.renshuu.org/api/v1/word/${wordId}`;
+    const endpoint = `/v1/word/${wordId}`;
     const method = add ? 'PUT' : 'DELETE';
     const key = isList ? 'list_id' : 'sched_id';
     const body = {};
@@ -302,7 +302,7 @@ const assignInternal = async (wordId, isList, listId, add, timerId, stat) => {
     };
     await init;
     const apikey = config['apikey'];
-    await doRequest(apikey, url, params, stat, () => {
+    await doRequest(apikey, endpoint, params, stat, () => {
         stat.classList.add('error');
     }, (results) => {
         const resultMessage = results['words'][0]['result'] || results['words'][0]['error'];

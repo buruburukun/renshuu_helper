@@ -1,10 +1,11 @@
-const doRequest = async (apikey, url, params, statusElem, onFailure, onSuccess) => {
+const doRequest = async (apikey, endpoint, params, statusElem, onFailure, onSuccess) => {
     if (!apikey) {
         statusElem.innerHTML = 'Error! Set the API key in the settings.';
         onFailure();
         return;
     }
 
+    const url = `https://www.renshuu.org/api${endpoint}`;
     params['headers'] = {
         'Authorization': `Bearer ${apikey}`,
     };

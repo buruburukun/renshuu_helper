@@ -72,8 +72,8 @@ const getListData = async () => {
     await init;
     const apikey = config['apikey'];
     if (apikey) {
-        const url = `https://www.renshuu.org/api/v1/word/1871`;
-        await doRequest(apikey, url, {}, list, () => {}, (results) => {
+        const endpoint = '/v1/word/1871';
+        await doRequest(apikey, endpoint, {}, list, () => {}, (results) => {
             list.innerHTML = applyListData(results['words'][0]['presence']['lists'], true);
             schedule.innerHTML = applyListData(results['words'][0]['presence']['scheds'], false);
         });
