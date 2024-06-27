@@ -5,7 +5,7 @@ const doRequest = async (apikey, endpoint, params, statusElem, onFailure, status
         return;
     }
 
-    const url = `https://www.renshuu.org/api${endpoint}`;
+    const url = `https://api.renshuu.org${endpoint}`;
     params['headers'] = {
         'Authorization': `Bearer ${apikey}`,
     };
