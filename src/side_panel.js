@@ -319,14 +319,10 @@ const assignInternal = async (wordId, isList, listId, add, timerId, stat) => {
             }, 1000);
         },
         404: (results) => {
-            const resultMessage = results['error'];
-            console.log("Result message:", resultMessage);
             stat.classList.add('error');
             stat.innerHTML = 'Invalid list/schedule';
         },
         409: (results) => {
-            const resultMessage = results['error'];
-            console.log("Result message:", resultMessage);
             stat.innerHTML = 'Success!'
             timers[timerId] = setTimeout(() => {
                 stat.classList.remove('show');
