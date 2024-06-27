@@ -69,8 +69,10 @@ const search = async (query, page) => {
     const endpoint = `/v1/word/search?value=${encodeURIComponent(query)}&pg=${page}`;
     await init;
     const apikey = config['apikey'];
-    await doRequest(apikey, endpoint, {}, content, resetQuery, (results) => {
-        content.innerHTML = formatSearch(results);
+    await doRequest(apikey, endpoint, {}, content, resetQuery, {
+        200: (results) => {
+            content.innerHTML = formatSearch(results);
+        },
     });
 };
 
@@ -251,9 +253,11 @@ const populateListData = async (wordId, list, schedule) => {
     const endpoint = `/v1/word/${wordId}`;
     await init;
     const apikey = config['apikey'];
-    await doRequest(apikey, endpoint, {}, list, () => {}, (results) => {
-        list.innerHTML = formatLists(wordId, results, true);
-        schedule.innerHTML = formatLists(wordId, results, false);
+    await doRequest(apikey, endpoint, {}, list, () => {}, {
+        200: (results) => {
+            list.innerHTML = formatLists(wordId, results, true);
+            schedule.innerHTML = formatLists(wordId, results, false);
+        },
     });
 };
 
@@ -304,19 +308,31 @@ const assignInternal = async (wordId, isList, listId, add, timerId, stat) => {
     const apikey = config['apikey'];
     await doRequest(apikey, endpoint, params, stat, () => {
         stat.classList.add('error');
-    }, (results) => {
-        const resultMessage = results['result'] || results['error'];
-        if (resultMessage === undefined) {
-            stat.innerHTML = `Error! ${isList ? 'List' : 'Schedule'} might not exist.`;
+    }, {
+        200: (results) => {
+            const resultMessage = results['result'];
+            console.log('Result message:', resultMessage);
+            stat.innerHTML = 'Success!'
+            timers[timerId] = setTimeout(() => {
+                stat.classList.remove('show');
+                delete timers[timerId];
+            }, 1000);
+        },
+        404: (results) => {
+            const resultMessage = results['error'];
+            console.log("Result message:", resultMessage);
             stat.classList.add('error');
-        } else {
+            stat.innerHTML = 'Invalid list/schedule';
+        },
+        409: (results) => {
+            const resultMessage = results['error'];
             console.log("Result message:", resultMessage);
             stat.innerHTML = 'Success!'
             timers[timerId] = setTimeout(() => {
                 stat.classList.remove('show');
                 delete timers[timerId];
             }, 1000);
-        }
+        },
     });
 }
 

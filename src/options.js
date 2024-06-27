@@ -73,9 +73,11 @@ const getListData = async () => {
     const apikey = config['apikey'];
     if (apikey) {
         const endpoint = '/v1/word/1871';
-        await doRequest(apikey, endpoint, {}, list, () => {}, (results) => {
-            list.innerHTML = applyListData(results['words'][0]['presence']['lists'], true);
-            schedule.innerHTML = applyListData(results['words'][0]['presence']['scheds'], false);
+        await doRequest(apikey, endpoint, {}, list, () => {}, {
+            200: (results) => {
+                list.innerHTML = applyListData(results['words'][0]['presence']['lists'], true);
+                schedule.innerHTML = applyListData(results['words'][0]['presence']['scheds'], false);
+            },
         });
     } else {
         list.innerHTML = applyListData([], true);
