@@ -344,6 +344,67 @@ const addToList = (elem, isList) => {
     }
 };
 
+const showProfile = async () => {
+    const streakKeys = ['correct_in_a_row', 'correct_in_a_row_alltime', 'days_studied_in_a_row', 'days_studied_in_a_row_alltime'];
+
+    const content = document.getElementById('content');
+    const endpoint = '/v1/profile';
+    await init;
+    const apikey = config['apikey'];
+    await doRequest(apikey, endpoint, {}, content, () => {}, {
+        200: (results) => {
+            let s = `
+                <div>${results['real_name']}</div>
+                <div>Level ${results['adventure_level']}</div>
+                <div>renshuu user since ${results['user_length']}</div>
+                <div><img src="${results['kao']}"/></div>
+                <div>Studied today: ${results['studied']['today_all']}</div>
+                <div>Words ${results['studied']['today_vocab']}</div>
+                <div>Kanji ${results['studied']['today_kanji']}</div>
+                <div>Grammar ${results['studied']['today_grammar']}</div>
+                <div>Sentences ${results['studied']['today_sent']}</div>
+                <div>Adjective Conjugations ${results['studied']['today_aconj']}</div>
+                <div>Verb Conjugations ${results['studied']['today_conj']}</div>
+                <div>Known: ${results['studied']['total']}</div>
+                <div>Words ${results['studied']['total_vocab']}</div>
+                <div>Kanji ${results['studied']['total_kanji']}</div>
+                <div>Grammar ${results['studied']['total_grammar']}</div>
+                <div>Sentences ${results['studied']['total_sent']}</div>
+                <table>
+            `;
+            s += '<tr><th>Progress</th>';
+            for (let i = 5; i >= 1; i--) {
+                s += `<th>N${i}</th>`
+            }
+            s += '</tr>';
+            for (const t of ['vocab', 'kanji', 'grammar', 'sent']) {
+                s += `<tr><td>${t}</td>`;
+                for (let i = 5; i >= 1; i--) {
+                    s += `<td>${results['level_progress_percs'][t][`n${i}`]}</td>`;
+                }
+                s += '</tr>';
+            }
+            s += '</table>';
+            s += '<table>';
+            s += '<tr><th>Streaks</th>';
+            s += '<th>Correct Current</th>';
+            s += '<th>Correct Best</th>';
+            s += '<th>Days Current</th>';
+            s += '<th>Days Best</th>';
+            s += '</tr>';
+            for (const t of ['vocab', 'kanji', 'grammar', 'sent', 'conj', 'aconj']) {
+                s += `<tr><td>${t}</td>`;
+                for (const u of streakKeys) {
+                    s += `<td>${results['streaks'][t][u]}</td>`;
+                }
+                s += '</tr>';
+            }
+            s += '</table>';
+            content.innerHTML = s;
+        },
+    });
+};
+
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('plus') || e.target.classList.contains('aform')) {
         const popupId = e.target.attributes.getNamedItem('popupId').value;
@@ -365,5 +426,7 @@ document.addEventListener('click', (e) => {
         const query = e.target.attributes.getNamedItem('query').value;
         const page = e.target.attributes.getNamedItem('page').value;
         search(query, page);
+    } else if (e.target.id == 'profile') {
+        showProfile();
     }
 });
