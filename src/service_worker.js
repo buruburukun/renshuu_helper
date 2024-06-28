@@ -1,6 +1,6 @@
 chrome.runtime.onInstalled.addListener(async () => {
     chrome.contextMenus.create({
-        id: 'renshuu',
+        id: 'wordSearch',
         title: 'Lookup "%s" on renshuu',
         contexts: ['selection'],
         type: 'normal',
@@ -15,9 +15,11 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 chrome.contextMenus.onClicked.addListener(async (item, tab) => {
-    if (item.menuItemId === 'renshuu') {
+    if (item.menuItemId === 'wordSearch') {
         chrome.storage.session.set({
             searchQuery: item.selectionText,
+            searchPage: 1,
+            searchType: 'word',
         });
         chrome.sidePanel.open({
             tabId: tab.id,

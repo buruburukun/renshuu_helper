@@ -10,8 +10,11 @@ const doRequest = async (apikey, endpoint, params, statusElem, onFailure, status
         'Authorization': `Bearer ${apikey}`,
     };
     const response = await fetch(url, params);
-    if (response.status == 401) {
+    if (response.status === 401) {
         statusElem.innerHTML = 'Error! Invalid API key.';
+        onFailure();
+    } else if (response.status === 429) {
+        statusElem.innerHTML = 'Error! Too many requests. Try again later.';
         onFailure();
     } else {
         try {

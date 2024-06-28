@@ -1,4 +1,5 @@
 const config = {};
+const session = {};
 const timers = {};
 
 const cssZoom = new CSSStyleSheet();
@@ -55,34 +56,207 @@ const setFavoriteSchedule = (favoriteSchedule) => {
 
 const resetQuery = () => {
     chrome.storage.session.set({
-        searchQuery: '',
+        searchPage: 0,
     });
 };
 
-const search = async (query, page) => {
-    if (!query) {
+const SEARCH_TYPES = {
+    word: {
+        endpoint: 'word',
+        formatter: (results) => {
+            const count = results['result_count'];
+            const m = results['total_pg'];
+            const page = results['pg'];
+            const prev = (page <= 1) ? '' : `<div class="search_page" page="${page-1}">&lt;</div>`;
+            const next = (page >= m) ? '' : `<div class="search_page" page="${page+1}">&gt;</div>`;
+            let result = `
+                <div class="flex_h">
+                    ${prev}
+                    <div>Page ${page} of ${m}</div>
+                    ${next}
+                    <div class="flex_pad"></div>
+                </div>
+                <div>${count} Results</div>
+            `;
+            for (const word of results['words']) {
+                let entry = word['pitch'].length > 0 ? formatPitch(word['pitch'][0]) : word['hiragana_full'];
+                if (word['kanji_full']) {
+                    entry = `${word['kanji_full']} / ${entry}`;
+                }
+
+                let alternatePitch = '';
+                if (word['pitch'].length > 1) {
+                    alternatePitch = `<div class="alternate_pitch">
+                        Alternate accent: ${word['pitch'].slice(1).map(formatPitch).join(', ')}
+                    </div>`;
+                }
+
+                let definition = word['def'];
+                if (typeof word['def'] !== 'string') {
+                    definition = `<ol><li>${word['def'].join('</li><li>')}</li></ol>`;
+                }
+
+                let markers = '';
+                if (word['markers'].length > 0) {
+                    markers = `<span class="marker">${word['markers'].join('</span><span class="marker">')}</span>`;
+                }
+
+                let aforms = '';
+                if (word['aforms'].length > 0) {
+                    aforms = 'Also written as: ';
+                    for (const aform of word['aforms']) {
+                        aforms += `
+                            <span class="aform" popupId="popup_${aform['id']}">
+                                ${popupHtml(aform['id'])}
+                                ${aform['term']}
+                            </span>
+                        `;
+                    }
+                }
+
+                result += `
+                    <div class="row">
+                        <div>
+                            <div class="flex_h">
+                                <div class="word flex_pad">${entry}</div>
+                                <div class="status" id="${word['id']}_status"></div>
+                                <div class="list_plus" wordId="${word['id']}">L+</div>
+                                <div class="schedule_plus" wordId="${word['id']}">S+</div>
+                                <div class="plus" popupId="popup_${word['id']}">+</div>
+                            </div>
+                            ${popupHtml(word['id'])}
+                            ${alternatePitch}
+                            <div class="partofspeech">${word['typeofspeech']}</div>
+                            <div class="definition">${definition}</div>
+                            <div class="markers">${markers}</div>
+                            <div class="aforms">${aforms}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            return result;
+        },
+    },
+    kanji: {
+        endpoint: 'kanji',
+        formatter: (results) => {
+            console.log(results);
+            const count = results['result_count'];
+            let result = `
+                <div>${count} Results</div>
+            `;
+            for (const kanji of results['kanjis']) {
+                // id
+                result += `
+                    <div class="row">
+                        <div>
+                            <div>${kanji['kanji']}</div>
+                            <div>${kanji['definition']}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            return result;
+        },
+    },
+    grammar: {
+        endpoint: 'grammar',
+        formatter: (results) => {
+            console.log(results);
+            const count = results['result_count'];
+            let result = `
+                <div>${count} Results</div>
+            `;
+            for (const grammar of results['grammar']) {
+                // construct (image)
+                // grammar_id
+                // id
+                // models
+                // url
+                result += `
+                    <div class="row">
+                        <div>
+                            <div>${grammar['title_english']}</div>
+                            <div>${grammar['title_japanese']}</div>
+                            <div>${grammar['meaning']['en']}</div>
+                            <div>${grammar['meaning_long']['en']}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            return result;
+        },
+    },
+    sentence: {
+        endpoint: 'reibun',
+        formatter: (results) => {
+            console.log(results);
+            const count = results['result_count'];
+            const perPage = results['per_page'];
+            const m = (((count + perPage - 1) / perPage) | 0) || 1;
+            const page = results['pg'];
+            const prev = (page <= 1) ? '' : `<div class="search_page" page="${page-1}">&lt;</div>`;
+            const next = (page >= m) ? '' : `<div class="search_page" page="${page+1}">&gt;</div>`;
+            let result = `
+                <div class="flex_h">
+                    ${prev}
+                    <div>Page ${page} of ${m}</div>
+                    ${next}
+                    <div class="flex_pad"></div>
+                </div>
+                <div>${count} Results</div>
+            `;
+            for (const reibun of results['reibuns']) {
+                // hiragana
+                // id
+                result += `
+                    <div class="row">
+                        <div>
+                            <div>${reibun['japanese']}</div>
+                            <div>${reibun['meaning']['en']}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            return result;
+        },
+    },
+};
+
+const search = async (query, page, type) => {
+    if (!query || page < 1) {
         return;
     }
 
     const content = document.querySelector('#content');
     content.innerHTML = `Searching for "${query}"...`;
-    const endpoint = `/v1/word/search?value=${encodeURIComponent(query)}&pg=${page}`;
+    const endpoint = `/v1/${SEARCH_TYPES[type].endpoint}/search?value=${encodeURIComponent(query)}&pg=${page}`;
     await init;
     const apikey = config['apikey'];
     await doRequest(apikey, endpoint, {}, content, resetQuery, {
         200: (results) => {
-            content.innerHTML = formatSearch(results);
+            content.innerHTML = SEARCH_TYPES[type].formatter(results);
         },
     });
 };
 
-chrome.storage.session.get(['searchQuery'], ({searchQuery}) => {
-    search(searchQuery, 1);
+chrome.storage.session.get(null, (result) => {
+    Object.assign(session, result);
+    document.getElementById('searchBar').value = session['searchQuery'] || '';
+    if (session['searchQuery']) {
+        search(session['searchQuery'], 1, session['searchType']);
+    }
 });
 
 chrome.storage.session.onChanged.addListener((changes) => {
+    for (const [key, {oldValue, newValue}] of Object.entries(changes)) {
+        session[key] = newValue;
+    }
     if (changes['searchQuery']) {
-        search(changes['searchQuery'].newValue, 1);
+        document.getElementById('searchBar').value = session['searchQuery'];
+    }
+    if (changes['searchQuery'] || changes['searchPage'] || changes['searchType']) {
+        search(session['searchQuery'], session['searchPage'], session['searchType']);
     }
 });
 
@@ -142,81 +316,6 @@ const popupHtml = (wordId) => {
             </div>
         </div>
     `;
-};
-
-const formatSearch = (results) => {
-    const count = results['result_count'];
-    const m = results['total_pg'];
-    const page = parseInt(results['pg'], 10);
-    const query = results['query'];
-    const prev = (page <= 1) ? '' : `<div class="search_page" query="${query}" page="${page-1}">&lt;</div>`;
-    const next = (page >= m) ? '' : `<div class="search_page" query="${query}" page="${page+1}">&gt;</div>`;
-    let result = `
-        <div class="flex_h">
-            ${prev}
-            <div>Page ${page} of ${m}</div>
-            ${next}
-            <div class="flex_pad"></div>
-        </div>
-        <div>${count} Results</div>
-    `;
-    for (const word of results['words']) {
-        let entry = word['pitch'].length > 0 ? formatPitch(word['pitch'][0]) : word['hiragana_full'];
-        if (word['kanji_full']) {
-            entry = `${word['kanji_full']} / ${entry}`;
-        }
-
-        let alternatePitch = '';
-        if (word['pitch'].length > 1) {
-            alternatePitch = `<div class="alternate_pitch">
-                Alternate accent: ${word['pitch'].slice(1).map(formatPitch).join(', ')}
-            </div>`;
-        }
-
-        let definition = word['def'];
-        if (typeof word['def'] !== 'string') {
-            definition = `<ol><li>${word['def'].join('</li><li>')}</li></ol>`;
-        }
-
-        let markers = '';
-        if (word['markers'].length > 0) {
-            markers = `<span class="marker">${word['markers'].join('</span><span class="marker">')}</span>`;
-        }
-
-        let aforms = '';
-        if (word['aforms'].length > 0) {
-            aforms = 'Also written as: ';
-            for (const aform of word['aforms']) {
-                aforms += `
-                    <span class="aform" popupId="popup_${aform['id']}">
-                        ${popupHtml(aform['id'])}
-                        ${aform['term']}
-                    </span>
-                `;
-            }
-        }
-
-        result += `
-            <div class="row">
-                <div>
-                    <div class="flex_h">
-                        <div class="word flex_pad">${entry}</div>
-                        <div class="status" id="${word['id']}_status"></div>
-                        <div class="list_plus" wordId="${word['id']}">L+</div>
-                        <div class="schedule_plus" wordId="${word['id']}">S+</div>
-                        <div class="plus" popupId="popup_${word['id']}">+</div>
-                    </div>
-                    ${popupHtml(word['id'])}
-                    ${alternatePitch}
-                    <div class="partofspeech">${word['typeofspeech']}</div>
-                    <div class="definition">${definition}</div>
-                    <div class="markers">${markers}</div>
-                    <div class="aforms">${aforms}</div>
-                </div>
-            </div>
-        `;
-    }
-    return result;
 };
 
 const formatLists = (wordId, results, isList) => {
@@ -423,10 +522,17 @@ document.addEventListener('click', (e) => {
     } else if (e.target.classList.contains('adder')) {
         assign(e.target);
     } else if (e.target.classList.contains('search_page')) {
-        const query = e.target.attributes.getNamedItem('query').value;
         const page = e.target.attributes.getNamedItem('page').value;
-        search(query, page);
-    } else if (e.target.id == 'profile') {
+        chrome.storage.session.set({
+            searchPage: page,
+        });
+    } else if (e.target.classList.contains('searchButton')) {
+        chrome.storage.session.set({
+            searchQuery: document.getElementById('searchBar').value,
+            searchPage: 1,
+            searchType: e.target.attributes.getNamedItem('searchType').value,
+        });
+    } else if (e.target.id === 'profile') {
         showProfile();
     }
 });
