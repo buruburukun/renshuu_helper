@@ -49,4 +49,4 @@ up as "L+" and "S+" buttons, respectively.
 * Search history
 * Finish kanji, grammar and sentence searches
 * Make the profile page prettier
-* Clickable kanji
+* Clickable kanji - more locations

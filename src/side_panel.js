@@ -81,7 +81,7 @@ const SEARCH_TYPES = {
             for (const word of results['words']) {
                 let entry = word['pitch'].length > 0 ? formatPitch(word['pitch'][0]) : word['hiragana_full'];
                 if (word['kanji_full']) {
-                    entry = `${word['kanji_full']} / ${entry}`;
+                    entry = `${makeClickable(word['kanji_full'])} / ${entry}`;
                 }
 
                 let alternatePitch = '';
@@ -149,7 +149,7 @@ const SEARCH_TYPES = {
                 result += `
                     <div class="row">
                         <div>
-                            <span class="kanji">${kanji['kanji']}</span>
+                            <span class="kanji kanji_click">${kanji['kanji']}</span>
                             <span>${kanji['definition']}</span>
                         </div>
                     </div>
@@ -550,6 +550,20 @@ const singleKanji = async (kanji) => {
     });
 };
 
+const makeClickable = (s) => {
+    let result = '';
+    for (let i = 0; i < s.length; i++) {
+        const c = s.charAt(i);
+        const code = s.charCodeAt(i);
+        if (0x4e00 <= code && code <= 0x9fff) {
+            result += `<span class="kanji_click">${c}</span>`;
+        } else {
+            result += c;
+        }
+    }
+    return result;
+};
+
 document.addEventListener('click', (e) => {
     const classList = e.target.classList;
     if (classList.contains('plus') || classList.contains('aform') || classList.contains('kanji_plus')) {
@@ -586,7 +600,7 @@ document.addEventListener('click', (e) => {
         });
     } else if (e.target.id === 'profile') {
         showProfile();
-    } else if (classList.contains('kanji')) {
+    } else if (classList.contains('kanji_click')) {
         singleKanji(e.target.textContent);
     }
 });
