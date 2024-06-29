@@ -45,4 +45,8 @@ up as "L+" and "S+" buttons, respectively.
 * Make the "Install renshuu API key" feature less janky
 * More renshuu APIs to make this a better extension
 * Improvements to renshuu's APIs
-* More Kaochan?
+* Icons. More Kaochan?
+* Search history
+* Finish kanji, grammar and sentence searches
+* Make the profile page prettier
+* Clickable kanji

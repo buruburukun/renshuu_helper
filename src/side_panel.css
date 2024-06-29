@@ -32,8 +32,12 @@ body {
     color: var(--fg);
 }
 
-.word, .plus, .list_plus, .schedule_plus, .close {
+.word, .plus, .kanji_plus, .list_plus, .schedule_plus, .close, .kanji {
     font-size: 150%;
+}
+
+.kanji_big {
+    font-size: 300%;
 }
 
 .list_plus, .schedule_plus {

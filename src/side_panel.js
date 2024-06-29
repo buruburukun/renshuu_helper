@@ -140,7 +140,6 @@ const SEARCH_TYPES = {
     kanji: {
         endpoint: 'kanji',
         formatter: (results) => {
-            console.log(results);
             const count = results['result_count'];
             let result = `
                 <div>${count} Results</div>
@@ -150,8 +149,8 @@ const SEARCH_TYPES = {
                 result += `
                     <div class="row">
                         <div>
-                            <div>${kanji['kanji']}</div>
-                            <div>${kanji['definition']}</div>
+                            <span class="kanji">${kanji['kanji']}</span>
+                            <span>${kanji['definition']}</span>
                         </div>
                     </div>
                 `;
@@ -162,6 +161,7 @@ const SEARCH_TYPES = {
     grammar: {
         endpoint: 'grammar',
         formatter: (results) => {
+            // TODO
             console.log(results);
             const count = results['result_count'];
             let result = `
@@ -190,6 +190,7 @@ const SEARCH_TYPES = {
     sentence: {
         endpoint: 'reibun',
         formatter: (results) => {
+            // TODO
             console.log(results);
             const count = results['result_count'];
             const perPage = results['per_page'];
@@ -318,13 +319,13 @@ const popupHtml = (wordId) => {
     `;
 };
 
-const formatLists = (wordId, results, isList) => {
+const formatLists = (wordId, presences, isList, entityType) => {
     const key = isList ? 'lists' : 'scheds';
     const idKey = isList ? 'list_id' : 'sched_id';
 
     // TODO groups
     let result = '';
-    for (const presence of results['words'][0]['presence'][key]) {
+    for (const presence of presences[key]) {
         const listId = presence[idKey];
         const name = presence['name'];
         const present = presence['hasWord'];
@@ -334,6 +335,7 @@ const formatLists = (wordId, results, isList) => {
                 <input type="checkbox"
                     id="${inputId}"
                     class="adder"
+                    entityType="${entityType}"
                     wordId="${wordId}"
                     isList="${isList}"
                     listId="${listId}"
@@ -354,8 +356,8 @@ const populateListData = async (wordId, list, schedule) => {
     const apikey = config['apikey'];
     await doRequest(apikey, endpoint, {}, list, () => {}, {
         200: (results) => {
-            list.innerHTML = formatLists(wordId, results, true);
-            schedule.innerHTML = formatLists(wordId, results, false);
+            list.innerHTML = formatLists(wordId, results['words'][0]['presence'], true, 'word');
+            schedule.innerHTML = formatLists(wordId, results['words'][0]['presence'], false, 'word');
         },
     });
 };
@@ -370,8 +372,6 @@ const showPopup = async (popupId, show) => {
         await populateListData(wordId, popupLists, popupSchedules);
     } else {
         popup.classList.remove('show');
-        popupLists.innerHTML = '';
-        popupSchedules.innerHTML = '';
     }
 };
 
@@ -379,13 +379,14 @@ const assign = async (elem) => {
     const wordId = elem.attributes.getNamedItem('wordId').value;
     const isList = elem.attributes.getNamedItem('isList').value === 'true';
     const listId = elem.attributes.getNamedItem('listId').value;
+    const entityType = elem.attributes.getNamedItem('entityType').value;
     const add = elem.checked;
     const timerId = `popup_${wordId}_status`;
     const stat = document.getElementById(timerId);
-    assignInternal(wordId, isList, listId, add, timerId, stat);
+    assignInternal(wordId, entityType, isList, listId, add, timerId, stat);
 };
 
-const assignInternal = async (wordId, isList, listId, add, timerId, stat) => {
+const assignInternal = async (wordId, entityType, isList, listId, add, timerId, stat) => {
     if (timers[timerId]) {
         clearTimeout(timers[timerId]);
     }
@@ -394,7 +395,7 @@ const assignInternal = async (wordId, isList, listId, add, timerId, stat) => {
     stat.classList.add('show');
     stat.innerHTML = 'Submitting data...';
 
-    const endpoint = `/v1/word/${wordId}`;
+    const endpoint = `/v1/${SEARCH_TYPES[entityType].endpoint}/${wordId}`;
     const method = add ? 'PUT' : 'DELETE';
     const key = isList ? 'list_id' : 'sched_id';
     const body = {};
@@ -439,7 +440,7 @@ const addToList = (elem, isList) => {
         const add = true;
         const timerId = `${wordId}_status`;
         const stat = document.getElementById(timerId);
-        assignInternal(wordId, isList, listId, add, timerId, stat);
+        assignInternal(wordId, 'word', isList, listId, add, timerId, stat);
     }
 };
 
@@ -504,29 +505,80 @@ const showProfile = async () => {
     });
 };
 
+const singleKanji = async (kanji) => {
+    resetQuery();
+    const content = document.getElementById('content');
+    content.innerHTML = `Looking up "${kanji}"...`;
+    const endpoint = `/v1/kanji/${kanji}`;
+    await init;
+    const apikey = config['apikey'];
+    await doRequest(apikey, endpoint, {}, content, () => {}, {
+        200: (results) => {
+            // TODO
+            // rwords
+            console.log(results);
+            let parts = '';
+            if (results['parts']) {
+                for (const part of results['parts']) {
+                    parts += `<div><span>${part['piece']}</span><span>${part['definition']}</span></div>`;
+                }
+            }
+            let result = `
+                <div class="flex_h">
+                    <div class="kanji_big">${results['kanji']}</div>
+                    <div class="kanji_plus" popupId="popup_${results['kanji']}">+</div>
+                </div>
+                ${popupHtml(results['kanji'])}
+                <div>${results['definition']}</div>
+                <div>Kunyomi: ${results['kunyomi']}</div>
+                <div>Onyomi: ${results['onyomi']}</div>
+
+                <div>Strokes: ${results['scount']}</div>
+                <div>Radical: ${results['radical']} (${results['radical_name']})</div>
+                <div>Parts: ${parts}</div>
+
+                <div>JLPT: ${results['jlpt']}</div>
+                <div>Kanji Kentei: ${results['kanken']}</div>
+            `;
+            content.innerHTML = result;
+            const popupId = `popup_${results['kanji']}`;
+            const popupLists = document.getElementById(popupId + '_lists');
+            const popupSchedules = document.getElementById(popupId + '_schedules');
+            popupLists.innerHTML = formatLists(results['kanji'], results['presence'], true, 'kanji');
+            popupSchedules.innerHTML = formatLists(results['kanji'], results['presence'], false, 'kanji');
+        },
+    });
+};
+
 document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('plus') || e.target.classList.contains('aform')) {
+    const classList = e.target.classList;
+    if (classList.contains('plus') || classList.contains('aform') || classList.contains('kanji_plus')) {
         const popupId = e.target.attributes.getNamedItem('popupId').value;
         const shownPopups = document.querySelectorAll('.popup.show');
         for (const popup of shownPopups) {
             showPopup(popup.id, false);
         }
-        showPopup(popupId, true);
-    } else if (e.target.classList.contains('close')) {
+        if (classList.contains('kanji_plus')) {
+            const popup = document.getElementById(popupId);
+            popup.classList.add('show');
+        } else {
+            showPopup(popupId, true);
+        }
+    } else if (classList.contains('close')) {
         const popupId = e.target.attributes.getNamedItem('popupId').value;
         showPopup(popupId, false);
-    } else if (e.target.classList.contains('list_plus')) {
+    } else if (classList.contains('list_plus')) {
         addToList(e.target, true);
-    } else if (e.target.classList.contains('schedule_plus')) {
+    } else if (classList.contains('schedule_plus')) {
         addToList(e.target, false);
-    } else if (e.target.classList.contains('adder')) {
+    } else if (classList.contains('adder')) {
         assign(e.target);
-    } else if (e.target.classList.contains('search_page')) {
+    } else if (classList.contains('search_page')) {
         const page = e.target.attributes.getNamedItem('page').value;
         chrome.storage.session.set({
             searchPage: page,
         });
-    } else if (e.target.classList.contains('searchButton')) {
+    } else if (classList.contains('searchButton')) {
         chrome.storage.session.set({
             searchQuery: document.getElementById('searchBar').value,
             searchPage: 1,
@@ -534,5 +586,7 @@ document.addEventListener('click', (e) => {
         });
     } else if (e.target.id === 'profile') {
         showProfile();
+    } else if (classList.contains('kanji')) {
+        singleKanji(e.target.textContent);
     }
 });

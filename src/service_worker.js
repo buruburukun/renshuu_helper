@@ -1,10 +1,12 @@
 chrome.runtime.onInstalled.addListener(async () => {
-    chrome.contextMenus.create({
-        id: 'wordSearch',
-        title: 'Lookup "%s" on renshuu',
-        contexts: ['selection'],
-        type: 'normal',
-    });
+    for (const entityType of ['word', 'kanji', 'grammar', 'sentence']) {
+        chrome.contextMenus.create({
+            id: `${entityType}Search`,
+            title: `Lookup ${entityType} "%s" on renshuu`,
+            contexts: ['selection'],
+            type: 'normal',
+        });
+    }
 
     chrome.contextMenus.create({
         id: 'apikey',
@@ -14,17 +16,27 @@ chrome.runtime.onInstalled.addListener(async () => {
     });
 });
 
-chrome.contextMenus.onClicked.addListener(async (item, tab) => {
-    if (item.menuItemId === 'wordSearch') {
-        chrome.storage.session.set({
-            searchQuery: item.selectionText,
-            searchPage: 1,
-            searchType: 'word',
-        });
+const search = (item, tab, entityType) => {
+    chrome.storage.session.set({
+        searchQuery: item.selectionText,
+        searchPage: 1,
+        searchType: entityType,
+    });
+    if (tab.id !== -1) {
         chrome.sidePanel.open({
             tabId: tab.id,
         });
-    } else if (item.menuItemId === 'apikey') {
+    }
+};
+
+chrome.contextMenus.onClicked.addListener(async (item, tab) => {
+    for (const entityType of ['word', 'kanji', 'grammar', 'sentence']) {
+        if (item.menuItemId === `${entityType}Search`) {
+            search(item, tab, entityType);
+            return;
+        }
+    }
+    if (item.menuItemId === 'apikey') {
         chrome.scripting.executeScript({
             target: {
                 tabId: tab.id,
