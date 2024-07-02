@@ -36,6 +36,10 @@ body {
     font-size: 150%;
 }
 
+.kanji_click {
+    cursor: pointer;
+}
+
 .kanji_big {
     font-size: 300%;
 }
