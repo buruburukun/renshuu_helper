@@ -113,10 +113,9 @@ const SEARCH_TYPES = {
                     aforms = 'Also written as: ';
                     for (const aform of word['aforms']) {
                         aforms += `
-                            <span class="aform" popupId="popup_${aform['id']}">
-                                ${popupHtml(aform['id'])}
-                                ${aform['term']}
-                            </span>
+                            <span class="aform">${makeClickable(aform['term'])}</span>
+                            ${popupHtml(aform['id'])}
+                            <span class="aform_plus" popupId="popup_${aform['id']}">+</span>
                         `;
                     }
                 }
@@ -574,7 +573,7 @@ const makeClickable = (s) => {
 
 document.addEventListener('click', (e) => {
     const classList = e.target.classList;
-    if (classList.contains('plus') || classList.contains('aform') || classList.contains('kanji_plus')) {
+    if (classList.contains('plus') || classList.contains('aform_plus') || classList.contains('kanji_plus')) {
         const popupId = e.target.attributes.getNamedItem('popupId').value;
         const shownPopups = document.querySelectorAll('.popup.show');
         for (const popup of shownPopups) {
