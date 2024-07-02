@@ -1,6 +1,8 @@
 const config = {};
 const session = {};
 const timers = {};
+let history = [];
+let historyIndex = -1;
 
 const cssZoom = new CSSStyleSheet();
 document.adoptedStyleSheets.push(cssZoom);
@@ -253,6 +255,10 @@ chrome.storage.session.get(null, (result) => {
     document.getElementById('searchBar').value = session['searchQuery'] || '';
     if (session['searchQuery']) {
         search(session['searchQuery'], 1, session['searchType']);
+        addHistory({
+            query: session['searchQuery'],
+            type: session['searchType'],
+        });
     }
 });
 
@@ -265,6 +271,12 @@ chrome.storage.session.onChanged.addListener((changes) => {
     }
     if (changes['searchQuery'] || changes['searchPage'] || changes['searchType']) {
         search(session['searchQuery'], session['searchPage'], session['searchType']);
+    }
+    if (changes['searchQuery'] || changes['searchType']) {
+        addHistory({
+            query: session['searchQuery'],
+            type: session['searchType'],
+        });
     }
 });
 
@@ -571,6 +583,29 @@ const makeClickable = (s) => {
     return result;
 };
 
+const navigateHistory = (forward) => {
+    console.log(history, historyIndex, forward);
+    if (forward && historyIndex + 1 >= history.length) {
+        return;
+    }
+    if (!forward && historyIndex <= 0) {
+        return;
+    }
+    historyIndex += forward ? 1 : -1;
+    const h = history[historyIndex];
+    if (h.type === 'singleKanji') {
+        singleKanji(h.query);
+    } else {
+        search(h.query, 1, h.type);
+    }
+};
+
+const addHistory = (item) => {
+    history = history.slice(0, historyIndex + 1);
+    history.push(item);
+    historyIndex++;
+};
+
 document.addEventListener('click', (e) => {
     const classList = e.target.classList;
     if (classList.contains('plus') || classList.contains('aform_plus') || classList.contains('kanji_plus')) {
@@ -599,7 +634,7 @@ document.addEventListener('click', (e) => {
         chrome.storage.session.set({
             searchPage: page,
         });
-    } else if (classList.contains('searchButton')) {
+    } else if (classList.contains('search_button')) {
         chrome.storage.session.set({
             searchQuery: document.getElementById('searchBar').value,
             searchPage: 1,
@@ -608,6 +643,14 @@ document.addEventListener('click', (e) => {
     } else if (e.target.id === 'profile') {
         showProfile();
     } else if (classList.contains('kanji_click')) {
+        addHistory({
+            query: e.target.textContent,
+            type: 'singleKanji',
+        });
         singleKanji(e.target.textContent);
+    } else if (e.target.id === 'searchBack') {
+        navigateHistory(false);
+    } else if (e.target.id === 'searchForward') {
+        navigateHistory(true);
     }
 });
