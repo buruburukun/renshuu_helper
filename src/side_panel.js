@@ -79,9 +79,16 @@ const SEARCH_TYPES = {
                 <div>${count} Results</div>
             `;
             for (const word of results['words']) {
+                let config = word['config'];
+
                 let entry = word['pitch'].length > 0 ? formatPitch(word['pitch'][0]) : word['hiragana_full'];
+                let rare = '';
                 if (word['kanji_full']) {
-                    entry = `${makeClickable(word['kanji_full'])} / ${entry}`;
+                    if (config.includes('common-hiragana')) {
+                        rare = `<div class="rare">Rarely written as: ${makeClickable(word['kanji_full'])}</div>`;
+                    } else {
+                        entry = `${makeClickable(word['kanji_full'])} / ${entry}`;
+                    }
                 }
 
                 let alternatePitch = '';
@@ -128,6 +135,7 @@ const SEARCH_TYPES = {
                             ${alternatePitch}
                             <div class="partofspeech">${word['typeofspeech']}</div>
                             <div class="definition">${definition}</div>
+                            ${rare}
                             <div class="markers">${markers}</div>
                             <div class="aforms">${aforms}</div>
                         </div>
