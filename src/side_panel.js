@@ -186,7 +186,7 @@ const SEARCH_TYPES = {
                     <div class="row">
                         <div>
                             <div>${grammar['title_english']}</div>
-                            <div>${grammar['title_japanese']}</div>
+                            <div>${makeClickable(grammar['title_japanese'])}</div>
                             <div>${grammar['meaning']['en']}</div>
                             <div>${grammar['meaning_long']['en']}</div>
                         </div>
@@ -222,7 +222,7 @@ const SEARCH_TYPES = {
                 result += `
                     <div class="row">
                         <div>
-                            <div>${reibun['japanese']}</div>
+                            <div>${makeClickable(reibun['japanese'])}</div>
                             <div>${reibun['meaning']['en']}</div>
                         </div>
                     </div>
@@ -537,7 +537,7 @@ const singleKanji = async (kanji) => {
             let parts = '';
             if (results['parts']) {
                 for (const part of results['parts']) {
-                    parts += `<div><span>${part['piece']}</span><span>${part['definition']}</span></div>`;
+                    parts += `<div><span class="kanji_click">${part['piece']}</span><span>${part['definition']}</span></div>`;
                 }
             }
             let result = `
@@ -551,11 +551,11 @@ const singleKanji = async (kanji) => {
                 <div>Onyomi: ${results['onyomi']}</div>
 
                 <div>Strokes: ${results['scount']}</div>
-                <div>Radical: ${results['radical']} (${results['radical_name']})</div>
+                <div>Radical: ${makeClickable(results['radical'])} (${results['radical_name']})</div>
                 <div>Parts: ${parts}</div>
 
                 <div>JLPT: ${results['jlpt']}</div>
-                <div>Kanji Kentei: ${results['kanken']}</div>
+                <div>Kanji Kentei: ${makeClickable(results['kanken'])}</div>
             `;
             if (results['rwords']) {
                 result += '<div>Example words</div>'
@@ -563,7 +563,7 @@ const singleKanji = async (kanji) => {
                     result += `<div>${rword['reading']}</div>`;
                     for (const word of rword['words']) {
                         result += `
-                            <div>${word['term']}</div>
+                            <div>${makeClickable(word['term'])}</div>
                             <div>${word['def']}</div>
                         `;
                     }
@@ -580,6 +580,9 @@ const singleKanji = async (kanji) => {
 };
 
 const makeClickable = (s) => {
+    if (!s) {
+        return s;
+    }
     let result = '';
     for (let i = 0; i < s.length; i++) {
         const c = s.charAt(i);
