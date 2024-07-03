@@ -238,7 +238,7 @@ const search = async (query, page, type) => {
         return;
     }
 
-    const content = document.querySelector('#content');
+    const content = document.getElementById('content');
     content.innerHTML = `Searching for "${query}"...`;
     const endpoint = `/v1/${SEARCH_TYPES[type].endpoint}/search?value=${encodeURIComponent(query)}&pg=${page}`;
     await init;
@@ -534,15 +534,13 @@ const singleKanji = async (kanji) => {
     await doRequest(apikey, endpoint, {}, content, () => {}, {
         200: (results) => {
             // TODO
-            // rwords
-            console.log(results);
             let parts = '';
             if (results['parts']) {
                 for (const part of results['parts']) {
                     parts += `<div><span>${part['piece']}</span><span>${part['definition']}</span></div>`;
                 }
             }
-            const result = `
+            let result = `
                 <div class="flex_h">
                     <div class="kanji_big">${results['kanji']}</div>
                     <div class="kanji_plus" popupId="popup_${results['kanji']}">+</div>
@@ -559,6 +557,18 @@ const singleKanji = async (kanji) => {
                 <div>JLPT: ${results['jlpt']}</div>
                 <div>Kanji Kentei: ${results['kanken']}</div>
             `;
+            if (results['rwords']) {
+                result += '<div>Example words</div>'
+                for (const rword of results['rwords']) {
+                    result += `<div>${rword['reading']}</div>`;
+                    for (const word of rword['words']) {
+                        result += `
+                            <div>${word['term']}</div>
+                            <div>${word['def']}</div>
+                        `;
+                    }
+                }
+            }
             content.innerHTML = result;
             const popupId = `popup_${results['kanji']}`;
             const popupLists = document.getElementById(popupId + '_lists');
