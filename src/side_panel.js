@@ -7,7 +7,7 @@ let historyIndex = -1;
 const cssZoom = new CSSStyleSheet();
 document.adoptedStyleSheets.push(cssZoom);
 
-const init = new Promise((resolve, reject) => {
+const init = new Promise((resolve, _reject) => {
     chrome.storage.sync.get(null, (result) => {
         Object.assign(config, result);
         setZoom(config['zoom']);
@@ -19,7 +19,7 @@ const init = new Promise((resolve, reject) => {
 });
 
 chrome.storage.sync.onChanged.addListener((changes) => {
-    for (const [key, {oldValue, newValue}] of Object.entries(changes)) {
+    for (const [key, {newValue}] of Object.entries(changes)) {
         config[key] = newValue;
     }
     if (changes['zoom']) {
@@ -81,7 +81,7 @@ const SEARCH_TYPES = {
                 <div>${count} Results</div>
             `;
             for (const word of results['words']) {
-                let config = word['config'];
+                const config = word['config'];
 
                 let entry = word['pitch'].length > 0 ? formatPitch(word['pitch'][0]) : word['hiragana_full'];
                 let rare = '';
@@ -263,7 +263,7 @@ chrome.storage.session.get(null, (result) => {
 });
 
 chrome.storage.session.onChanged.addListener((changes) => {
-    for (const [key, {oldValue, newValue}] of Object.entries(changes)) {
+    for (const [key, {newValue}] of Object.entries(changes)) {
         session[key] = newValue;
     }
     if (changes['searchQuery']) {
@@ -394,7 +394,7 @@ const showPopup = async (popupId, show) => {
     }
 };
 
-const assign = async (elem) => {
+const assign = (elem) => {
     const wordId = elem.attributes.getNamedItem('wordId').value;
     const isList = elem.attributes.getNamedItem('isList').value === 'true';
     const listId = elem.attributes.getNamedItem('listId').value;
@@ -437,11 +437,11 @@ const assignInternal = async (wordId, entityType, isList, listId, add, timerId, 
                 delete timers[timerId];
             }, 1000);
         },
-        404: (results) => {
+        404: (_) => {
             stat.classList.add('error');
             stat.innerHTML = 'Invalid list/schedule';
         },
-        409: (results) => {
+        409: (_) => {
             stat.innerHTML = 'Success!'
             timers[timerId] = setTimeout(() => {
                 stat.classList.remove('show');
@@ -542,7 +542,7 @@ const singleKanji = async (kanji) => {
                     parts += `<div><span>${part['piece']}</span><span>${part['definition']}</span></div>`;
                 }
             }
-            let result = `
+            const result = `
                 <div class="flex_h">
                     <div class="kanji_big">${results['kanji']}</div>
                     <div class="kanji_plus" popupId="popup_${results['kanji']}">+</div>

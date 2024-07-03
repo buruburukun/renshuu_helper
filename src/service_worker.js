@@ -1,4 +1,4 @@
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(() => {
     for (const entityType of ['word', 'kanji', 'grammar', 'sentence']) {
         chrome.contextMenus.create({
             id: `${entityType}Search`,
@@ -29,7 +29,7 @@ const search = (item, tab, entityType) => {
     }
 };
 
-chrome.contextMenus.onClicked.addListener(async (item, tab) => {
+chrome.contextMenus.onClicked.addListener((item, tab) => {
     for (const entityType of ['word', 'kanji', 'grammar', 'sentence']) {
         if (item.menuItemId === `${entityType}Search`) {
             search(item, tab, entityType);
@@ -50,7 +50,7 @@ chrome.contextMenus.onClicked.addListener(async (item, tab) => {
                         if (document.querySelector(selector)) {
                             return resolve(document.querySelector(selector));
                         }
-                        const observer = new MutationObserver(mutations => {
+                        const observer = new MutationObserver(_mutations => {
                             if (document.querySelector(selector)) {
                                 observer.disconnect();
                                 resolve(document.querySelector(selector));

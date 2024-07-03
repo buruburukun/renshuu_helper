@@ -35,4 +35,3 @@ const doRequest = async (apikey, endpoint, params, statusElem, onFailure, status
         }
     }
 };
-

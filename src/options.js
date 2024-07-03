@@ -1,6 +1,6 @@
 const config = {};
 
-const init = new Promise((resolve, reject) => {
+const init = new Promise((resolve, _reject) => {
     const defaults = {
         apikey: '',
         zoom: '1',
@@ -91,7 +91,7 @@ const setDark = (dark) => {
 };
 
 chrome.storage.sync.onChanged.addListener((changes) => {
-    for (const [key, {oldValue, newValue}] of Object.entries(changes)) {
+    for (const [key, {newValue}] of Object.entries(changes)) {
         config[key] = newValue;
     }
     if (changes['apikey']) {
