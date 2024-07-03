@@ -431,7 +431,7 @@ const assignInternal = async (wordId, entityType, isList, listId, add, timerId, 
         200: (results) => {
             const resultMessage = results['result'];
             console.log('Result message:', resultMessage);
-            stat.innerHTML = 'Success!'
+            stat.innerHTML = 'Success!';
             timers[timerId] = setTimeout(() => {
                 stat.classList.remove('show');
                 delete timers[timerId];
@@ -442,7 +442,7 @@ const assignInternal = async (wordId, entityType, isList, listId, add, timerId, 
             stat.innerHTML = 'Invalid list/schedule';
         },
         409: (_) => {
-            stat.innerHTML = 'Success!'
+            stat.innerHTML = 'Success!';
             timers[timerId] = setTimeout(() => {
                 stat.classList.remove('show');
                 delete timers[timerId];
