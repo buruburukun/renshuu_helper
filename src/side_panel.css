@@ -32,11 +32,11 @@ body {
     color: var(--fg);
 }
 
-.word, .plus, .aform_plus, .kanji_plus, .list_plus, .schedule_plus, .close, .kanji {
+.word, .plus, .single_plus, .list_plus, .schedule_plus, .close, .kanji {
     font-size: 150%;
 }
 
-.kanji_click {
+.kanji_click, .grammar {
     cursor: pointer;
 }
 
@@ -146,4 +146,9 @@ body {
 }
 .pitch_drop {
    border-right: 3px solid #00ff00;
+}
+
+.highlight {
+    font-weight: bold;
+    text-decoration-line: underline;
 }

@@ -117,7 +117,7 @@ const SEARCH_TYPES = {
                         aforms += `
                             <span class="aform">${makeClickable(aform['term'])}</span>
                             ${popupHtml(aform['id'])}
-                            <span class="aform_plus" popupId="popup_${aform['id']}">+</span>
+                            <span class="plus" popupId="popup_${aform['id']}">+</span>
                         `;
                     }
                 }
@@ -154,7 +154,6 @@ const SEARCH_TYPES = {
                 <div>${count} Results</div>
             `;
             for (const kanji of results['kanjis']) {
-                // id
                 result += `
                     <div class="row">
                         <div>
@@ -170,25 +169,18 @@ const SEARCH_TYPES = {
     grammar: {
         endpoint: 'grammar',
         formatter: (results) => {
-            // TODO
-            console.log(results);
             const count = results['result_count'];
             let result = `
                 <div>${count} Results</div>
             `;
             for (const grammar of results['grammar']) {
-                // construct (image)
-                // grammar_id
-                // id
-                // models
-                // url
                 result += `
                     <div class="row">
                         <div>
-                            <div>${grammar['title_english']}</div>
-                            <div>${makeClickable(grammar['title_japanese'])}</div>
+                            <div class="grammar" grammarId="${grammar['id']}">${grammar['title_japanese']}</div>
                             <div>${grammar['meaning']['en']}</div>
                             <div>${grammar['meaning_long']['en']}</div>
+                            <div><img src="${grammar['construct']}"/></div>
                         </div>
                     </div>
                 `;
@@ -543,7 +535,7 @@ const singleKanji = async (kanji) => {
             let result = `
                 <div class="flex_h">
                     <div class="kanji_big">${results['kanji']}</div>
-                    <div class="kanji_plus" popupId="popup_${results['kanji']}">+</div>
+                    <div class="single_plus" popupId="popup_${results['kanji']}">+</div>
                 </div>
                 ${popupHtml(results['kanji'])}
                 <div>${results['definition']}</div>
@@ -579,6 +571,78 @@ const singleKanji = async (kanji) => {
     });
 };
 
+const singleGrammar = async (grammarId) => {
+    // TODO
+    console.log('singleGrammar', grammarId);
+    resetQuery();
+    const content = document.getElementById('content');
+    content.innerHTML = `Looking up grammar...`;
+    const endpoint = `/v1/grammar/${grammarId}`;
+    await init;
+    const apikey = config['apikey'];
+    await doRequest(apikey, endpoint, {}, content, () => {}, {
+        200: (results) => {
+            // TODO
+            console.log(results);
+            if (Array.isArray(results)) {
+                content.innerHTML = `Grammar with id ${grammarId} seems to be broken.`;
+                return;
+            }
+            let models = '<div>Examples:</div>';
+            for (const model of results['models']) {
+                models += `
+                    <div>${highlight(makeClickable(model['japanese']))}</div>
+                    <div>${highlight(model['meanings']['en'])}</div>
+                `;
+            }
+            const result = `
+                <div class="flex_h">
+                    <div>${makeClickable(results['title_japanese'])}</div>
+                    <div class="single_plus" popupId="popup_${results['id']}">+</div>
+                </div>
+                ${popupHtml(results['id'])}
+                <div>${results['meaning']['en']}</div>
+                <div>${results['meaning_long']['en']}</div>
+                <div><img src="${results['construct']}"/></div>
+                ${models}
+            `;
+            content.innerHTML = result;
+            const popupId = `popup_${results['id']}`;
+            const popupLists = document.getElementById(popupId + '_lists');
+            const popupSchedules = document.getElementById(popupId + '_schedules');
+            popupLists.innerHTML = formatLists(results['id'], results['presence'], true, 'grammar');
+            popupSchedules.innerHTML = formatLists(results['id'], results['presence'], false, 'grammar');
+        },
+    });
+};
+
+const highlight = (s) => {
+    if (!s) {
+        return s;
+    }
+    let inside = false;
+    let result = '';
+    for (let i = 0; i < s.length; i++) {
+        const c = s.charAt(i);
+        if (c === '_' && i + 1 < s.length && s.charAt(i + 1) === '_') {
+            i++;
+            if (inside) {
+                result += '</span>';
+            } else {
+                result += '<span class="highlight">';
+            }
+            inside = !inside;
+        } else {
+            result += c;
+        }
+    }
+    if (inside) {
+        console.error('Malformed sentence:', s);
+        result += '</span>';
+    }
+    return result;
+};
+
 const makeClickable = (s) => {
     if (!s) {
         return s;
@@ -597,7 +661,6 @@ const makeClickable = (s) => {
 };
 
 const navigateHistory = (forward) => {
-    console.log(history, historyIndex, forward);
     if (forward && historyIndex + 1 >= history.length) {
         return;
     }
@@ -608,6 +671,8 @@ const navigateHistory = (forward) => {
     const h = history[historyIndex];
     if (h.type === 'singleKanji') {
         singleKanji(h.query);
+    } else if (h.type === 'singleGrammar') {
+        singleGrammar(h.query);
     } else {
         search(h.query, 1, h.type);
     }
@@ -621,13 +686,13 @@ const addHistory = (item) => {
 
 document.addEventListener('click', (e) => {
     const classList = e.target.classList;
-    if (classList.contains('plus') || classList.contains('aform_plus') || classList.contains('kanji_plus')) {
+    if (classList.contains('plus') || classList.contains('single_plus')) {
         const popupId = e.target.attributes.getNamedItem('popupId').value;
         const shownPopups = document.querySelectorAll('.popup.show');
         for (const popup of shownPopups) {
             showPopup(popup.id, false);
         }
-        if (classList.contains('kanji_plus')) {
+        if (classList.contains('single_plus')) {
             const popup = document.getElementById(popupId);
             popup.classList.add('show');
         } else {
@@ -665,5 +730,12 @@ document.addEventListener('click', (e) => {
         navigateHistory(false);
     } else if (e.target.id === 'searchForward') {
         navigateHistory(true);
+    } else if (classList.contains('grammar')) {
+        const grammarId = e.target.attributes.getNamedItem('grammarId').value;
+        addHistory({
+            query: grammarId,
+            type: 'singleGrammar',
+        });
+        singleGrammar(grammarId);
     }
 });

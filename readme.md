@@ -46,6 +46,10 @@ up as "L+" and "S+" buttons, respectively.
 * More renshuu APIs to make this a better extension
 * Improvements to renshuu's APIs
 * Icons. More Kaochan?
-* Finish kanji, grammar and sentence searches
+* Make kanji, grammar and sentence views prettier
 * Make the profile page prettier
-* Clickable kanji - more locations
+* Word -> sentence searches
+
+## Renshuu bugs
+
+* Adding grammar to schedules doesn't seem to work (lists untested)
