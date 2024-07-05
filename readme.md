@@ -52,4 +52,5 @@ up as "L+" and "S+" buttons, respectively.
 
 ## Renshuu bugs
 
-* Adding grammar to schedules doesn't seem to work (lists untested)
+* Adding grammar to lists and schedules doesn't seem to work
+* Getting certain grammar doesn't work (e.g., GET /v1/grammar/42)
