@@ -5,6 +5,7 @@ const init = new Promise((resolve, _reject) => {
         apikey: '',
         zoom: '1',
         dark: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
+        furigana: true,
         favoriteList: '',
         favoriteSchedule: '',
     };
@@ -14,6 +15,7 @@ const init = new Promise((resolve, _reject) => {
         document.getElementById('zoom').value = config['zoom'];
         document.getElementById('dark').checked = config['dark'];
         setDark(config['dark']);
+        document.getElementById('furigana').checked = config['furigana'];
         resolve();
         getListData();
     });
@@ -28,6 +30,7 @@ document.getElementById('save').addEventListener('click', () => {
         apikey: document.getElementById('apikey').value,
         zoom: document.getElementById('zoom').value,
         dark: document.getElementById('dark').checked,
+        furigana: document.getElementById('furigana').checked,
     };
 
     const listValue = document.getElementById('favorite_list').value;

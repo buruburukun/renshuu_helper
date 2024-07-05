@@ -32,7 +32,7 @@ body {
     color: var(--fg);
 }
 
-.word, .plus, .single_plus, .list_plus, .schedule_plus, .close, .kanji {
+.word, .plus, .single_plus, .list_plus, .schedule_plus, .close, .kanji, .sentence {
     font-size: 150%;
 }
 
@@ -46,6 +46,10 @@ body {
 
 .list_plus, .schedule_plus {
     padding-right: 1em;
+    display: none;
+}
+
+[furigana="false"] rt {
     display: none;
 }
 

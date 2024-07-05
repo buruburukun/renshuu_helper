@@ -12,6 +12,7 @@ const init = new Promise((resolve, _reject) => {
         Object.assign(config, result);
         setZoom(config['zoom']);
         setDark(config['dark']);
+        setFurigana(config['furigana']);
         setFavoriteList(config['favoriteList']);
         setFavoriteSchedule(config['favoriteSchedule']);
         resolve();
@@ -27,6 +28,9 @@ chrome.storage.sync.onChanged.addListener((changes) => {
     }
     if (changes['dark']) {
         setDark(config['dark']);
+    }
+    if (changes['furigana']) {
+        setFurigana(config['furigana']);
     }
     if (changes['favoriteList']) {
         setFavoriteList(config['favoriteList']);
@@ -48,6 +52,9 @@ const setZoom = (zoom) => {
 const setDark = (dark) => {
     const theme = dark ? 'dark' : 'light';
     document.documentElement.setAttribute('theme', theme);
+};
+const setFurigana = (furigana) => {
+    document.documentElement.setAttribute('furigana', furigana);
 };
 const setFavoriteList = (favoriteList) => {
     document.documentElement.setAttribute('favorite_list', favoriteList ? 'true' : '');
@@ -191,8 +198,6 @@ const SEARCH_TYPES = {
     sentence: {
         endpoint: 'reibun',
         formatter: (results) => {
-            // TODO
-            console.log(results);
             const count = results['result_count'];
             const perPage = results['per_page'];
             const m = (((count + perPage - 1) / perPage) | 0) || 1;
@@ -209,12 +214,10 @@ const SEARCH_TYPES = {
                 <div>${count} Results</div>
             `;
             for (const reibun of results['reibuns']) {
-                // hiragana
-                // id
                 result += `
                     <div class="row">
                         <div>
-                            <div>${makeClickable(reibun['japanese'])}</div>
+                            <div class="sentence">${makeClickable(ruby(reibun['hiragana'], reibun['japanese']))}</div>
                             <div>${reibun['meaning']['en']}</div>
                         </div>
                     </div>
@@ -223,6 +226,102 @@ const SEARCH_TYPES = {
             return result;
         },
     },
+};
+
+const sanitizeSentence = (s) => {
+    return s.replaceAll('\u3000', '').replaceAll('____', '');
+};
+
+const ruby = (hu, k) => {
+    console.log(hu);
+    const h = sanitizeSentence(hu);
+    console.log(h);
+    if (h === k) {
+        return k;
+    }
+    const d = [];
+    for (let i = 0; i <= h.length; i++) {
+        d[i] = [];
+        for (let j = 0; j <= k.length; j++) {
+            d[i][j] = 0;
+        }
+    }
+    for (let i = 0; i <= h.length; i++) {
+        d[i][0] = i;
+    }
+    for (let j = 0; j <= k.length; j++) {
+        d[0][j] = j;
+    }
+    for (let i = 1; i <= h.length; i++) {
+        for (let j = 1; j <= k.length; j++) {
+            const sub = d[i-1][j-1] + ((h.charAt(i-1) === k.charAt(j-1)) ? 0 : 1);
+            d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, sub);
+        }
+    }
+    let [i, j] = [h.length, k.length];
+    const data = [];
+    const buf = [];
+    while (i > 0 && j > 0) {
+        const min = Math.min(d[i-1][j-1], d[i][j-1], d[i-1][j]);
+        let toPush;
+        if (min === d[i-1][j-1]) {
+            if (min == d[i][j]) {
+                toPush = {s: k.charAt(j-1)};
+            } else {
+                data.push({h: h.charAt(i-1)});
+                buf.push({k: k.charAt(j-1)});
+            }
+            i--;
+            j--;
+        } else if (min === d[i-1][j]) {
+            data.push({h: h.charAt(i-1)});
+            i--;
+        } else {
+            toPush = {k: k.charAt(j-1)};
+            j--;
+        }
+        if (toPush) {
+            data.push(...buf);
+            buf.length = 0;
+            data.push(toPush);
+        }
+    }
+    while (i > 0) {
+        data.push({h: h.charAt(i-1)});
+        i--;
+    }
+    data.push(...buf);
+    while (j > 0) {
+        data.push({k: k.charAt(j-1)});
+        j--;
+    }
+    let result = '';
+    let mode = 's';
+    for (let i = data.length - 1; i >= 0; i--) {
+        const c = data[i];
+        if (c.k && mode === 'k' || c.h && mode === 'h' || c.s && mode === 's') {
+            result += c.k || c.h || c.s;
+        } else if (c.k && mode === 's') {
+            result += `<ruby>${c.k}`;
+            mode = 'k';
+        } else if (c.h && mode === 'k') {
+            result += `<rt>${c.h}`;
+            mode = 'h';
+        } else if (c.s) {
+            result += `</rt></ruby>${c.s}`;
+            mode = 's';
+        } else {
+            console.error('Unexpected mode', mode, i, data);
+            throw new Error('Unexpected mode');
+        }
+    }
+    if (mode === 'h') {
+        result += '</rt></ruby>';
+    } else if (mode !== 's') {
+        console.error('End unexpected mode', mode, data);
+        throw new Error('End unexpected mode');
+    }
+    return result;
 };
 
 const search = async (query, page, type) => {
@@ -591,7 +690,7 @@ const singleGrammar = async (grammarId) => {
             let models = '<div>Examples:</div>';
             for (const model of results['models']) {
                 models += `
-                    <div>${highlight(makeClickable(model['japanese']))}</div>
+                    <div class="sentence">${highlight(makeClickable(ruby(model['hiragana'], model['japanese'])))}</div>
                     <div>${highlight(model['meanings']['en'])}</div>
                 `;
             }
