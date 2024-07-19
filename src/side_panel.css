@@ -36,7 +36,7 @@ body {
     font-size: 150%;
 }
 
-.kanji_click, .grammar, .plus, .single_plus, .list_plus, .schedule_plus, .close {
+.kanji_click, .grammar, .plus, .single_plus, .list_plus, .schedule_plus, .close, #profile {
     cursor: pointer;
 }
 
