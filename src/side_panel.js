@@ -181,16 +181,26 @@ const SEARCH_TYPES = {
                 <div>${count} Results</div>
             `;
             for (const grammar of results['grammar']) {
-                result += `
-                    <div class="row">
-                        <div>
-                            <div class="grammar" grammarId="${grammar['id']}">${grammar['title_japanese']}</div>
-                            <div>${grammar['meaning']['en']}</div>
-                            <div>${grammar['meaning_long']['en']}</div>
-                            <div><img src="${grammar['construct']}"/></div>
-                        </div>
-                    </div>
-                `;
+                const lines = [
+                    grammar['title_english'],
+                    grammar['title_japanese'],
+                    grammar['meaning']['en'],
+                    grammar['meaning_long']['en'],
+                    `<img src="${grammar['construct']}"/>`,
+                ];
+                result += `<div class="row"><div>`;
+                let first = true;
+                for (const line of lines) {
+                    if (line) {
+                        if (first) {
+                            result += `<div class="grammar" grammarId="${grammar['id']}">${line}</div>`;
+                        } else {
+                            result += `<div>${line}</div>`;
+                        }
+                        first = false;
+                    }
+                }
+                result += `</div></div>`;
             }
             return result;
         },

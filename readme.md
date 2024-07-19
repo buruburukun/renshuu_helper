@@ -54,3 +54,5 @@ up as "L+" and "S+" buttons, respectively.
 
 * Adding grammar to lists and schedules doesn't seem to work
 * Getting certain grammar doesn't work (e.g., GET /v1/grammar/42)
+* Grammar search needs paging (no way to get more than 25 results)
+* Kanji/Grammar presence is broken (schedule hasWord is always 0)
