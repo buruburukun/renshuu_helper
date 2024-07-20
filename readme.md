@@ -59,5 +59,3 @@ up as "L+" and "S+" buttons, respectively.
   lists work though, did not test kanji or grammar lists)
 * Adding words/kanji to schedules works, but deleting does not, probably same
   cause as the previous point because hasWord is always 0
-* I have a particular word list set ("Common") that doesn't show up when
-  querying for presence
