@@ -238,73 +238,115 @@ const SEARCH_TYPES = {
     },
 };
 
+const reMultipleSpaces = /\u3000+/g;
 const sanitizeSentence = (s) => {
-    return s.replaceAll('\u3000', '').replaceAll('____', '');
+    let replaced = s
+        .replaceAll('__\u3000__', '\u3000')
+        .replaceAll('__', '\u3000__\u3000')
+        .replaceAll(reMultipleSpaces, '\u3000');
+    if (replaced.charAt(0) === '\u3000') {
+        replaced = replaced.substring(1);
+    }
+    if (replaced.charAt(replaced.length-1) === '\u3000') {
+        replaced = replaced.substring(0, replaced.length-1);
+    }
+    return replaced;
 };
 
-const ruby = (hu, k) => {
-    console.log(hu);
-    const h = sanitizeSentence(hu);
-    console.log(h);
-    if (h === k) {
-        return k;
-    }
+const furigana = (hparts, k) => {
     const d = [];
-    for (let i = 0; i <= h.length; i++) {
+    for (let i = 0; i <= hparts.length; i++) {
         d[i] = [];
         for (let j = 0; j <= k.length; j++) {
             d[i][j] = 0;
         }
     }
-    for (let i = 0; i <= h.length; i++) {
+    for (let i = 0; i <= hparts.length; i++) {
         d[i][0] = i;
     }
     for (let j = 0; j <= k.length; j++) {
         d[0][j] = j;
     }
-    for (let i = 1; i <= h.length; i++) {
+    for (let i = 1; i <= hparts.length; i++) {
         for (let j = 1; j <= k.length; j++) {
-            const sub = d[i-1][j-1] + ((h.charAt(i-1) === k.charAt(j-1)) ? 0 : 1);
-            d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, sub);
+            const curh = hparts[i-1];
+            const hlen = curh.length;
+            if (curh === k.substring(j - hlen, j)) {
+                d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-hlen]);
+            } else {
+                d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1);
+            }
         }
     }
-    let [i, j] = [h.length, k.length];
+
+    let [i, j] = [hparts.length, k.length];
     const data = [];
-    const buf = [];
     while (i > 0 && j > 0) {
-        const min = Math.min(d[i-1][j-1], d[i][j-1], d[i-1][j]);
-        let toPush;
-        if (min === d[i-1][j-1]) {
-            if (min == d[i][j]) {
-                toPush = {s: k.charAt(j-1)};
-            } else {
-                data.push({h: h.charAt(i-1)});
-                buf.push({k: k.charAt(j-1)});
-            }
+        const min = Math.min(d[i][j-1], d[i-1][j]);
+        const curh = hparts[i-1];
+        const hlen = curh.length;
+        if (j - hlen >= 0 && curh === k.substring(j - hlen, j)) {
+            data.push({s: curh});
             i--;
-            j--;
+            j -= hlen;
         } else if (min === d[i-1][j]) {
-            data.push({h: h.charAt(i-1)});
+            data.push({h: curh});
             i--;
         } else {
-            toPush = {k: k.charAt(j-1)};
+            data.push({k: k.charAt(j-1)});
             j--;
-        }
-        if (toPush) {
-            data.push(...buf);
-            buf.length = 0;
-            data.push(toPush);
         }
     }
     while (i > 0) {
-        data.push({h: h.charAt(i-1)});
+        data.push({h: hparts[i-1]});
         i--;
     }
-    data.push(...buf);
     while (j > 0) {
         data.push({k: k.charAt(j-1)});
         j--;
     }
+    return data;
+};
+
+const furiganaOuter = (hparts, k, secondary) => {
+    const data = furigana(hparts, k);
+    if (!secondary) {
+        return data;
+    }
+    let hs = '';
+    let ks = '';
+    const result = [];
+    for (let i = 0; i < data.length; i++) {
+        const c = data[i];
+        if (c.h) {
+            hs = c.h + hs;
+        } else if (c.k) {
+            ks = c.k + ks;
+        } else {
+            if (hs !== '' || ks !== '') {
+                const d = furigana(hs.split(''), ks);
+                result.push(...d);
+            }
+            result.push(c);
+            hs = '';
+            ks = '';
+        }
+    }
+    if (hs !== '' || ks !== '') {
+        const d = furigana(hs.split(''), ks);
+        result.push(...d);
+    }
+    return result;
+};
+
+const ruby = (hu, k) => {
+    const h = sanitizeSentence(hu);
+    let hparts = h.split('\u3000');
+    const secondary = hparts.length !== 1;
+    if (!secondary) {
+        hparts = hparts.split('');
+    }
+    const data = furiganaOuter(hparts, k, secondary);
     let result = '';
     let mode = 's';
     for (let i = data.length - 1; i >= 0; i--) {
@@ -321,14 +363,14 @@ const ruby = (hu, k) => {
             result += `</rt></ruby>${c.s}`;
             mode = 's';
         } else {
-            console.error('Unexpected mode', mode, i, data);
+            console.error('Unexpected mode', hu, k, mode, i, data);
             throw new Error('Unexpected mode');
         }
     }
     if (mode === 'h') {
         result += '</rt></ruby>';
     } else if (mode !== 's') {
-        console.error('End unexpected mode', mode, data);
+        console.error('End unexpected mode', hu, k, mode, data);
         throw new Error('End unexpected mode');
     }
     return result;
