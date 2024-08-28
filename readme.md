@@ -49,13 +49,3 @@ up as "L+" and "S+" buttons, respectively.
 * Make kanji, grammar and sentence views prettier
 * Make the profile page prettier
 * Word -> sentence searches
-
-## Renshuu bugs
-
-* Adding grammar to lists and schedules doesn't seem to work
-* Getting certain grammar doesn't work (e.g., GET /v1/grammar/42)
-* Grammar search needs paging (no way to get more than 25 results)
-* Words/Kanji/Grammar presence is broken (schedule hasWord is always 0, word
-  lists work though, did not test kanji or grammar lists)
-* Adding words/kanji to schedules works, but deleting does not, probably same
-  cause as the previous point because hasWord is always 0

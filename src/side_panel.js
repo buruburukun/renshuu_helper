@@ -176,8 +176,18 @@ const SEARCH_TYPES = {
     grammar: {
         endpoint: 'grammar',
         formatter: (results) => {
-            const count = results['result_count'];
+            const count = results['result_count'] || 0;
+            const m = results['total_pg'] || 1;
+            const page = parseInt(results['pg']) || 1;
+            const prev = (page <= 1) ? '' : `<div class="search_page" page="${page-1}">&lt;</div>`;
+            const next = (page >= m) ? '' : `<div class="search_page" page="${page+1}">&gt;</div>`;
             let result = `
+                <div class="flex_h">
+                    ${prev}
+                    <div>Page ${page} of ${m}</div>
+                    ${next}
+                    <div class="flex_pad"></div>
+                </div>
                 <div>${count} Results</div>
             `;
             for (const grammar of results['grammar']) {
@@ -186,8 +196,10 @@ const SEARCH_TYPES = {
                     grammar['title_japanese'],
                     grammar['meaning']['en'],
                     grammar['meaning_long']['en'],
-                    `<img src="${grammar['construct']}"/>`,
                 ];
+                if (grammar['construct']) {
+                    lines.push(`<img src="${grammar['construct']}"/>`);
+                }
                 result += `<div class="row"><div>`;
                 let first = true;
                 for (const line of lines) {
