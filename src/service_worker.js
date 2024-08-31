@@ -47,13 +47,15 @@ chrome.contextMenus.onClicked.addListener((item, tab) => {
 
                 const waitForElm = (selector) => {
                     return new Promise(resolve => {
-                        if (document.querySelector(selector)) {
-                            return resolve(document.querySelector(selector));
+                        const alreadyExists = document.querySelector(selector);
+                        if (alreadyExists) {
+                            return resolve(alreadyExists);
                         }
                         const observer = new MutationObserver(_mutations => {
-                            if (document.querySelector(selector)) {
+                            const found = document.querySelector(selector);
+                            if (found) {
                                 observer.disconnect();
-                                resolve(document.querySelector(selector));
+                                resolve(found);
                             }
                         });
                         observer.observe(document.body, {
